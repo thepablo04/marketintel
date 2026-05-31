@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Indicadores Económicos & La Bolsa</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0a0f;--bg2:#111118;--bg3:#1a1a24;--bg4:#20202e;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#e8e8f0;--muted:#6b6b80;--accent:#00d4ff;--accent2:#7c3aed;--green:#00ff9d;--red:#ff4d6d;--amber:#ffb700;--white:#fff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-weight:300;line-height:1.6;overflow-x:hidden;}
+
+/* SIDEBAR NAV */
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);z-index:200;display:flex;flex-direction:column;padding:1.5rem 0;}
+.logo{font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:var(--white);padding:0 1.25rem 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem;letter-spacing:-0.02em;}
+.logo span{color:var(--accent);}
+.nav-section-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);padding:0 1.25rem;margin:1rem 0 0.4rem;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:0.45rem 1.25rem;font-size:12.5px;color:var(--muted);cursor:pointer;transition:all 0.15s;border-left:2px solid transparent;}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
+.nav-item.active{color:var(--accent);border-left-color:var(--accent);background:rgba(0,212,255,0.05);}
+.nav-item .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
+
+/* MAIN LAYOUT */
+.page-wrap{margin-left:220px;min-height:100vh;}
+
+/* TICKER */
+.ticker-bar{overflow:hidden;background:var(--bg2);border-bottom:1px solid var(--border);padding:0.5rem 0;}
+.ticker-track{display:flex;gap:2.5rem;animation:ticker 30s linear infinite;width:max-content;}
+.ticker-item{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap;display:flex;gap:6px;}
+.ticker-item .up{color:var(--green);}
+.ticker-item .dn{color:var(--red);}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* SECTIONS */
+.section{display:none;padding:2.5rem 2.5rem 4rem;max-width:1000px;}
+.section.active{display:block;animation:fadeUp 0.35s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+/* HERO SECTION */
+.hero-section{display:none;padding:3rem 2.5rem 4rem;max-width:1000px;}
+.hero-section.active{display:block;}
+.hero-title{font-family:'Syne',sans-serif;font-size:clamp(2.5rem,5vw,4.5rem);font-weight:800;line-height:0.95;letter-spacing:-0.03em;color:var(--white);margin-bottom:1rem;}
+.hero-title span{color:transparent;-webkit-text-stroke:1px rgba(255,255,255,0.2);}
+.hero-sub{font-size:1rem;color:var(--muted);max-width:500px;line-height:1.8;margin-bottom:2.5rem;}
+.quick-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:2.5rem;}
+.qcard{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;cursor:pointer;transition:all 0.2s;border-top:2px solid;}
+.qcard:hover{background:var(--bg4);transform:translateY(-2px);}
+.qcard-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:6px;}
+.qcard-title{font-family:'Syne',sans-serif;font-size:1.05rem;font-weight:700;color:var(--white);}
+.qcard-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* SECTION HEADER */
+.sec-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;margin-bottom:0.6rem;}
+.sec-title{font-family:'Syne',sans-serif;font-size:clamp(2rem,4vw,3.5rem);font-weight:800;line-height:0.95;letter-spacing:-0.03em;color:var(--white);margin-bottom:0.75rem;}
+.sec-desc{font-size:0.95rem;color:var(--muted);max-width:580px;line-height:1.8;margin-bottom:2rem;}
+
+/* CARDS */
+.card-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:2rem;}
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.25rem;}
+.card-full{grid-column:1/-1;}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:2rem;}
+.stat{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.85rem 1.1rem;flex:1;min-width:120px;}
+.stat-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
+.stat-val{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--white);}
+
+/* DEF BOX */
+.def-box{background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:1.5rem 1.75rem;margin-bottom:2rem;font-size:0.95rem;line-height:1.8;}
+
+/* SCENARIOS */
+.scenarios{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:2rem;}
+.sc{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.25rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.sc.bull::before{background:var(--green);}
+.sc.bear::before{background:var(--red);}
+.sc-badge{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:6px;}
+.sc.bull .sc-badge{color:var(--green);}
+.sc.bear .sc-badge{color:var(--red);}
+.sc-title{font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:6px;}
+.sc-body{font-size:0.82rem;color:var(--muted);line-height:1.7;}
+
+/* EXAMPLE BOX */
+.example{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.5rem 1.75rem;margin-bottom:2rem;}
+.example-ey{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent2);margin-bottom:0.75rem;}
+.example-body{font-size:0.9rem;line-height:1.8;}
+.hn{font-family:'IBM Plex Mono',monospace;font-weight:500;padding:1px 5px;border-radius:3px;font-size:0.88em;}
+.hn-r{background:rgba(255,77,109,0.15);color:#ff8099;}
+.hn-g{background:rgba(0,255,157,0.1);color:var(--green);}
+.hn-b{background:rgba(0,212,255,0.1);color:var(--accent);}
+
+/* SECTOR TABLE */
+.sector-table{width:100%;border-collapse:collapse;font-size:0.82rem;margin-bottom:2rem;}
+.sector-table th{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;}
+.sector-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);}
+.sector-table tr:last-child td{border-bottom:none;}
+.tag-up{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(0,255,157,0.1);color:var(--green);}
+.tag-dn{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(255,77,109,0.1);color:var(--red);}
+.tag-neu{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:3px;background:rgba(255,183,0,0.1);color:var(--amber);}
+
+/* CHART WRAP */
+.chart-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.5rem;margin-bottom:2rem;}
+.chart-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;}
+canvas{max-height:220px;}
+
+/* FORMULA */
+.formula{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:1rem 1.5rem;font-family:'IBM Plex Mono',monospace;font-size:0.85rem;color:var(--accent);margin-bottom:2rem;text-align:center;}
+
+/* TAGS */
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1.5rem;}
+.tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:4px 10px;border-radius:3px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);}
+.tag.hot{border-color:rgba(255,77,109,0.3);background:rgba(255,77,109,0.05);color:#ff8099;}
+.tag.cool{border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.05);color:var(--accent);}
+.tag.warm{border-color:rgba(255,183,0,0.3);background:rgba(255,183,0,0.05);color:var(--amber);}
+
+/* CALENDAR */
+.cal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:2rem;}
+.cal-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;border-left:3px solid;}
+.cal-date{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:4px;}
+.cal-name{font-family:'Syne',sans-serif;font-size:0.9rem;font-weight:700;color:var(--white);margin-bottom:3px;}
+.cal-impact{font-size:11px;}
+.cal-impact span{padding:2px 7px;border-radius:3px;font-family:'IBM Plex Mono',monospace;font-size:10px;}
+.high{background:rgba(255,77,109,0.12);color:#ff8099;}
+.med{background:rgba(255,183,0,0.12);color:var(--amber);}
+.low{background:rgba(0,212,255,0.12);color:var(--accent);}
+
+/* QUIZ */
+.quiz-q{font-size:1rem;font-weight:500;color:var(--white);margin-bottom:1.25rem;line-height:1.6;}
+.quiz-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:1.25rem;}
+.quiz-opt{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.85rem 1.25rem;font-size:0.875rem;color:var(--text);cursor:pointer;transition:all 0.2s;text-align:left;}
+.quiz-opt:hover{border-color:var(--border2);background:var(--bg4);}
+.quiz-opt.correct{border-color:var(--green);background:rgba(0,255,157,0.07);color:var(--green);}
+.quiz-opt.wrong{border-color:var(--red);background:rgba(255,77,109,0.07);color:#ff8099;}
+.quiz-opt.reveal{border-color:var(--green);background:rgba(0,255,157,0.05);color:var(--green);}
+.quiz-feedback{font-size:0.875rem;line-height:1.7;padding:1rem 1.25rem;border-radius:8px;margin-bottom:1rem;display:none;}
+.quiz-feedback.show{display:block;}
+.quiz-feedback.ok{background:rgba(0,255,157,0.07);border:1px solid rgba(0,255,157,0.2);color:#b3ffe0;}
+.quiz-feedback.ko{background:rgba(255,77,109,0.07);border:1px solid rgba(255,77,109,0.2);color:#ffb3c0;}
+.quiz-score{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:1.5rem;}
+.quiz-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px 20px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;transition:all 0.15s;margin-right:8px;}
+.quiz-btn:hover{background:var(--bg4);}
+.quiz-btn.primary{background:var(--accent);border-color:var(--accent);color:#000;font-weight:500;}
+.quiz-progress{display:flex;gap:5px;margin-bottom:1.5rem;}
+.qp-dot{width:8px;height:8px;border-radius:50%;background:var(--border2);}
+.qp-dot.done{background:var(--green);}
+.qp-dot.current{background:var(--accent);}
+
+/* CALCULATOR */
+.calc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem;}
+.calc-field label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;}
+.calc-field input,.calc-field select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:0.65rem 0.9rem;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none;transition:border 0.15s;}
+.calc-field input:focus,.calc-field select:focus{border-color:var(--accent);}
+.calc-field select option{background:var(--bg3);}
+.calc-result{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.5rem;text-align:center;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.calc-verdict{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;margin-bottom:0.5rem;}
+.calc-verdict.bullish{color:var(--green);}
+.calc-verdict.bearish{color:var(--red);}
+.calc-verdict.neutral{color:var(--amber);}
+.calc-explain{font-size:0.82rem;color:var(--muted);line-height:1.6;max-width:360px;}
+.calc-sectors{display:flex;flex-wrap:wrap;gap:6px;margin-top:0.75rem;justify-content:center;}
+
+/* SEMAFORO */
+.semaforo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:2rem;}
+.sem-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.1rem 1.25rem;}
+.sem-name{font-size:12px;color:var(--muted);margin-bottom:6px;}
+.sem-val{font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--white);margin-bottom:4px;}
+.sem-bar{height:4px;border-radius:2px;margin-bottom:6px;position:relative;background:var(--border);}
+.sem-bar-fill{height:100%;border-radius:2px;transition:width 0.8s ease;}
+.sem-signal{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:3px;}
+.bull-s{background:rgba(0,255,157,0.1);color:var(--green);}
+.bear-s{background:rgba(255,77,109,0.1);color:var(--red);}
+.neu-s{background:rgba(255,183,0,0.1);color:var(--amber);}
+.sem-overall{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.75rem 2rem;text-align:center;margin-bottom:2rem;}
+.sem-overall-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;}
+.sem-overall-val{font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;margin-bottom:0.5rem;}
+.sem-overall-desc{font-size:0.85rem;color:var(--muted);max-width:400px;margin:0 auto;}
+
+/* GLOSSARY */
+.glos-search{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;color:var(--white);font-family:'Inter',sans-serif;font-size:14px;outline:none;margin-bottom:1.5rem;transition:border 0.15s;}
+.glos-search:focus{border-color:var(--accent);}
+.glos-items{display:flex;flex-direction:column;gap:8px;}
+.glos-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;transition:border 0.15s;}
+.glos-item:hover{border-color:var(--border2);}
+.glos-term{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:var(--white);margin-bottom:4px;}
+.glos-cat{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--accent2);margin-bottom:6px;}
+.glos-def{font-size:0.85rem;color:var(--muted);line-height:1.7;}
+.glos-item.hidden{display:none;}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:2rem;margin-bottom:2rem;overflow-x:auto;}
+.flow{display:flex;flex-wrap:wrap;gap:0;align-items:center;justify-content:center;}
+.flow-node{background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:0.6rem 1rem;font-size:12px;text-align:center;min-width:110px;}
+.flow-node.trigger{border-color:rgba(255,77,109,0.4);background:rgba(255,77,109,0.06);color:#ff8099;}
+.flow-node.action{border-color:rgba(0,212,255,0.4);background:rgba(0,212,255,0.06);color:var(--accent);}
+.flow-node.result{border-color:rgba(0,255,157,0.4);background:rgba(0,255,157,0.06);color:var(--green);}
+.flow-node.result-bad{border-color:rgba(255,77,109,0.4);background:rgba(255,77,109,0.06);color:#ff8099;}
+.flow-arrow{font-size:18px;color:var(--muted);padding:0 6px;}
+.flow-row{display:flex;align-items:center;flex-wrap:wrap;gap:0;margin-bottom:10px;justify-content:center;}
+
+/* MOBILE */
+@media(max-width:800px){
+  .sidebar{display:none;}
+  .page-wrap{margin-left:0;}
+  .card-grid,.scenarios,.calc-grid{grid-template-columns:1fr;}
+  .section,.hero-section{padding:1.5rem 1.25rem 3rem;}
+  .mobile-nav{display:flex!important;}
+}
+.mobile-nav{display:none;overflow-x:auto;gap:6px;padding:0.75rem 1rem;background:var(--bg2);border-bottom:1px solid var(--border);}
+.mobile-pill{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;}
+.mobile-pill.active{background:var(--accent);border-color:var(--accent);color:#000;}
+
+.sec-divider{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);padding:0.6rem 0;border-bottom:1px solid var(--border);margin-bottom:1.5rem;}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">Market<span>Intel</span></div>
+  <div class="nav-section-label">Dashboard</div>
+  <div class="nav-item active" data-target="home" onclick="go('home')"><span class="dot"></span>Inicio</div>
+  <div class="nav-item" data-target="semaforo" onclick="go('semaforo')"><span class="dot"></span>Semáforo de mercado</div>
+  <div class="nav-item" data-target="diagram" onclick="go('diagram')"><span class="dot"></span>Relación entre indicadores</div>
+  <div class="nav-item" data-target="calculator" onclick="go('calculator')"><span class="dot"></span>Calculadora de impacto</div>
+  <div class="nav-section-label">Indicadores</div>
+  <div class="nav-item" data-target="fed" onclick="go('fed')"><span class="dot"></span>Tasas FED</div>
+  <div class="nav-item" data-target="inflation" onclick="go('inflation')"><span class="dot"></span>Inflación</div>
+  <div class="nav-item" data-target="cpi" onclick="go('cpi')"><span class="dot"></span>CPI / IPC</div>
+  <div class="nav-item" data-target="pce" onclick="go('pce')"><span class="dot"></span>PCE / Core PCE</div>
+  <div class="nav-item" data-target="nfp" onclick="go('nfp')"><span class="dot"></span>NFP / Desempleo</div>
+  <div class="nav-item" data-target="pib" onclick="go('pib')"><span class="dot"></span>PIB (GDP)</div>
+  <div class="nav-item" data-target="pmi" onclick="go('pmi')"><span class="dot"></span>ISM PMI</div>
+  <div class="nav-item" data-target="consumer" onclick="go('consumer')"><span class="dot"></span>Confianza del consumidor</div>
+  <div class="nav-section-label">Herramientas</div>
+  <div class="nav-item" data-target="screener" onclick="go('screener')"><span class="dot" style="background:var(--green)"></span>Screener de Acciones</div>
+  <div class="nav-section-label">Mis Anotaciones</div>
+  <div class="nav-item" data-target="vi_principios" onclick="go('vi_principios')"><span class="dot" style="background:var(--amber)"></span>7 Principios</div>
+  <div class="nav-item" data-target="vi_fundamentales" onclick="go('vi_fundamentales')"><span class="dot" style="background:var(--amber)"></span>Análisis Fundamental</div>
+  <div class="nav-item" data-target="vi_tecnico" onclick="go('vi_tecnico')"><span class="dot" style="background:var(--amber)"></span>Análisis Técnico</div>
+  <div class="nav-section-label">Aprendizaje</div>
+  <div class="nav-item" data-target="calendar" onclick="go('calendar')"><span class="dot"></span>Calendario económico</div>
+  <div class="nav-item" data-target="sectors" onclick="go('sectors')"><span class="dot"></span>Sectores vs indicadores</div>
+  <div class="nav-item" data-target="quiz" onclick="go('quiz')"><span class="dot"></span>Quiz de mercados</div>
+  <div class="nav-item" data-target="glossary" onclick="go('glossary')"><span class="dot"></span>Glosario financiero</div>
+</nav>
+
+<div class="page-wrap">
+
+<!-- TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-track" id="ticker-track"></div>
+</div>
+
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobile-nav"></div>
+
+<!-- ======================== HOME ======================== -->
+<section id="sec-home" class="hero-section active">
+  <div class="sec-eyebrow" style="color:var(--accent)">Guía interactiva de mercados</div>
+  <div class="hero-title">Indicadores<br>Económicos<br><span>&amp; La Bolsa</span></div>
+  <p class="hero-sub">Todo lo que mueve los mercados financieros globales, explicado con claridad. Desde las tasas de la FED hasta la confianza del consumidor.</p>
+  <div class="quick-cards">
+    <div class="qcard" style="border-top-color:var(--accent)" onclick="go('semaforo')">
+      <div class="qcard-label" style="color:var(--accent)">Live</div>
+      <div class="qcard-title">Semáforo</div>
+      <div class="qcard-sub">Estado actual del mercado</div>
+    </div>
+    <div class="qcard" style="border-top-color:var(--accent2)" onclick="go('diagram')">
+      <div class="qcard-label" style="color:var(--accent2)">Visual</div>
+      <div class="qcard-title">Relaciones</div>
+      <div class="qcard-sub">Cómo se conectan</div>
+    </div>
+    <div class="qcard" style="border-top-color:var(--amber)" onclick="go('calculator')">
+      <div class="qcard-label" style="color:var(--amber)">Tool</div>
+      <div class="qcard-title">Calculadora</div>
+      <div class="qcard-sub">Real vs esperado</div>
+    </div>
+    <div class="qcard" style="border-top-color:var(--green)" onclick="go('quiz')">
+      <div class="qcard-label" style="color:var(--green)">Test</div>
+      <div class="qcard-title">Quiz</div>
+      <div class="qcard-sub">Pon a prueba tu conocimiento</div>
+    </div>
+    <div class="qcard" style="border-top-color:#ff8099" onclick="go('calendar')">
+      <div class="qcard-label" style="color:#ff8099">Fechas</div>
+      <div class="qcard-title">Calendario</div>
+      <div class="qcard-sub">Próximas publicaciones</div>
+    </div>
+    <div class="qcard" style="border-top-color:var(--muted)" onclick="go('glossary')">
+      <div class="qcard-label" style="color:var(--muted)">Ref</div>
+      <div class="qcard-title">Glosario</div>
+      <div class="qcard-sub">Términos clave</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== SEMAFORO ======================== -->
+<section id="sec-semaforo" class="section">
+  <div class="sec-eyebrow" style="color:var(--green)">Dashboard · Datos de referencia 2024</div>
+  <div class="sec-title">Semáforo<br>de Mercado</div>
+  <p class="sec-desc">Estado actual de los principales indicadores y su señal para la renta variable estadounidense.</p>
+  <div class="sem-overall" id="sem-overall"></div>
+  <div class="semaforo-grid" id="semaforo-grid"></div>
+  <div class="sec-divider">Lectura de señales</div>
+  <div class="card-grid">
+    <div class="card">
+      <div class="sc-badge" style="color:var(--green)">▲ Señal alcista</div>
+      <div class="sc-title" style="margin-bottom:6px;font-family:'Syne',sans-serif;font-weight:700;color:var(--white);">Favorable para acciones</div>
+      <div class="sc-body">Inflación bajando, FED con posibilidad de recortar, empleo sólido pero no recalentado. El entorno "Goldilocks" que el mercado ama.</div>
+    </div>
+    <div class="card">
+      <div class="sc-badge" style="color:var(--red)">▼ Señal bajista</div>
+      <div class="sc-title" style="margin-bottom:6px;font-family:'Syne',sans-serif;font-weight:700;color:var(--white);">Presión sobre acciones</div>
+      <div class="sc-body">Inflación persistente, FED restrictiva, señales de recesión en PMI/PIB. El mercado descuenta menores ganancias corporativas.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== DIAGRAM ======================== -->
+<section id="sec-diagram" class="section">
+  <div class="sec-eyebrow" style="color:var(--accent2)">Macro · Relaciones causales</div>
+  <div class="sec-title">Relación entre<br>Indicadores</div>
+  <p class="sec-desc">Cómo fluye la información macroeconómica desde los datos hasta el precio de las acciones.</p>
+  <div class="diagram-wrap">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;">Cadena de transmisión monetaria</div>
+    <div class="flow-row"><div class="flow-node trigger">Inflación alta<br><small style="font-size:10px;opacity:0.7">CPI/PCE &gt; 3%</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED sube tasas<br><small style="font-size:10px;opacity:0.7">Reunión FOMC</small></div><div class="flow-arrow">→</div><div class="flow-node action">Crédito caro<br><small style="font-size:10px;opacity:0.7">Hipotecas, bonos</small></div><div class="flow-arrow">→</div><div class="flow-node result-bad">Bolsa cae<br><small style="font-size:10px;opacity:0.7">Valuaciones bajan</small></div></div>
+    <div class="flow-row" style="margin-top:1.5rem;"><div class="flow-node trigger" style="border-color:rgba(0,255,157,0.4);background:rgba(0,255,157,0.06);color:var(--green)">Inflación baja<br><small style="font-size:10px;opacity:0.7">CPI/PCE → 2%</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED baja tasas<br><small style="font-size:10px;opacity:0.7">Pivote monetario</small></div><div class="flow-arrow">→</div><div class="flow-node action">Crédito barato<br><small style="font-size:10px;opacity:0.7">Expansión empresarial</small></div><div class="flow-arrow">→</div><div class="flow-node result">Bolsa sube<br><small style="font-size:10px;opacity:0.7">Valuaciones suben</small></div></div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin:2rem 0 1.5rem;">Cadena empleo → inflación → FED</div>
+    <div class="flow-row"><div class="flow-node trigger">NFP muy alto<br><small style="font-size:10px;opacity:0.7">&gt;300K empleos</small></div><div class="flow-arrow">→</div><div class="flow-node action">Salarios suben<br><small style="font-size:10px;opacity:0.7">Avg Hourly Earnings</small></div><div class="flow-arrow">→</div><div class="flow-node trigger">Inflación sube<br><small style="font-size:10px;opacity:0.7">Más gasto</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED hawkish<br><small style="font-size:10px;opacity:0.7">No recorta</small></div><div class="flow-arrow">→</div><div class="flow-node result-bad">Bolsa presionada</div></div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin:2rem 0 1.5rem;">Indicadores adelantados vs rezagados</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+      <div class="card"><div class="sc-badge" style="color:var(--accent)">Adelantados</div><div style="font-size:12px;color:var(--muted);line-height:1.7;margin-top:6px;">PMI<br>Confianza del consumidor<br>Curva de rendimientos<br>Nuevos pedidos</div></div>
+      <div class="card"><div class="sc-badge" style="color:var(--amber)">Coincidentes</div><div style="font-size:12px;color:var(--muted);line-height:1.7;margin-top:6px;">PIB<br>NFP<br>Ventas minoristas<br>Producción industrial</div></div>
+      <div class="card"><div class="sc-badge" style="color:var(--muted)">Rezagados</div><div style="font-size:12px;color:var(--muted);line-height:1.7;margin-top:6px;">Tasa de desempleo<br>Tasas de préstamos<br>Inventarios<br>Deuda corporativa</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== CALCULATOR ======================== -->
+<section id="sec-calculator" class="section">
+  <div class="sec-eyebrow" style="color:var(--amber)">Herramienta · Análisis de sorpresa</div>
+  <div class="sec-title">Calculadora<br>de Impacto</div>
+  <p class="sec-desc">Ingresa el dato real vs el esperado y descubre si el mercado reaccionará al alza o a la baja.</p>
+  <div class="card-grid">
+    <div class="card">
+      <div class="calc-grid">
+        <div class="calc-field">
+          <label>Indicador</label>
+          <select id="calc-ind" onchange="calcUpdate()">
+            <option value="cpi">CPI (Inflación)</option>
+            <option value="nfp">NFP (Empleos)</option>
+            <option value="pib">PIB (GDP)</option>
+            <option value="pmi">ISM PMI</option>
+            <option value="consumer">Confianza consumidor</option>
+            <option value="pce">PCE Core</option>
+          </select>
+        </div>
+        <div class="calc-field">
+          <label>Dato esperado</label>
+          <input type="number" id="calc-exp" placeholder="ej: 3.1" step="0.1" oninput="calcUpdate()">
+        </div>
+        <div class="calc-field">
+          <label>Dato real publicado</label>
+          <input type="number" id="calc-real" placeholder="ej: 2.9" step="0.1" oninput="calcUpdate()">
+        </div>
+        <div class="calc-field">
+          <label>Diferencia</label>
+          <input type="text" id="calc-diff" readonly placeholder="Se calcula automáticamente" style="opacity:0.6;cursor:default;">
+        </div>
+      </div>
+    </div>
+    <div class="calc-result" id="calc-result">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);">Ingresa los datos para ver el análisis</div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== INDICADORES ======================== -->
+<!-- FED -->
+<section id="sec-fed" class="section">
+  <div class="sec-eyebrow" style="color:var(--accent)">Política monetaria · 8 veces al año</div>
+  <div class="sec-title">Tasas de<br>Interés FED</div>
+  <p class="sec-desc">El instrumento más poderoso de la política monetaria. Una decisión que mueve billones de dólares en segundos.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Tasa actual</div><div class="stat-val">5.25–5.50%</div></div>
+    <div class="stat"><div class="stat-label">Subidas 2022–23</div><div class="stat-val">+525 pb</div></div>
+    <div class="stat"><div class="stat-label">Meta inflación</div><div class="stat-val">2.0%</div></div>
+    <div class="stat"><div class="stat-label">Reuniones/año</div><div class="stat-val">8 (FOMC)</div></div>
+  </div>
+  <div class="def-box">La FED establece la <strong>tasa de fondos federales</strong>: el interés al que los bancos se prestan dinero overnight. Aunque parezca un número técnico, tiene un efecto dominó sobre hipotecas, bonos corporativos, valuaciones de empresas y el tipo de cambio del dólar. Es literalmente el "precio del dinero" en todo el mundo.</div>
+  <div class="sec-divider">Impacto en la bolsa</div>
+  <div class="scenarios">
+    <div class="sc bull"><div class="sc-badge">▲ Alcista</div><div class="sc-title">FED baja tasas (Dovish)</div><div class="sc-body">El crédito se abarata, las empresas se expanden, las ganancias futuras valen más hoy. Las acciones tech y growth lideran. Los bonos existentes suben de precio. El dólar se debilita.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ Bajista</div><div class="sc-title">FED sube tasas (Hawkish)</div><div class="sc-body">El dinero se encarece, las valuaciones se comprimen. Empresas con P/E alto (como NVIDIA) pierden más. Los bonos del Tesoro se vuelven más atractivos vs acciones. El dólar se fortalece.</div></div>
+  </div>
+  <div class="sec-divider">Impacto por sector</div>
+  <table class="sector-table">
+    <thead><tr><th>Sector</th><th>Tasas suben</th><th>Tasas bajan</th><th>¿Por qué?</th></tr></thead>
+    <tbody>
+      <tr><td>Tecnología / Growth</td><td><span class="tag-dn">−− Muy negativo</span></td><td><span class="tag-up">++ Muy positivo</span></td><td>Valuaciones altas, ganancias lejanas se descuentan más</td></tr>
+      <tr><td>Bancos / Financiero</td><td><span class="tag-up">+ Positivo</span></td><td><span class="tag-dn">− Negativo</span></td><td>Margen de interés neto sube con tasas altas</td></tr>
+      <tr><td>Real Estate (REITs)</td><td><span class="tag-dn">−− Muy negativo</span></td><td><span class="tag-up">++ Muy positivo</span></td><td>Compiten con los bonos por rendimiento</td></tr>
+      <tr><td>Utilities / Dividendos</td><td><span class="tag-dn">− Negativo</span></td><td><span class="tag-up">+ Positivo</span></td><td>Similar a bonos: rendimiento relativo cambia</td></tr>
+      <tr><td>Consumo básico</td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-neu">Neutro</span></td><td>Demanda inelástica, menos sensible a ciclo</td></tr>
+    </tbody>
+  </table>
+  <div class="chart-wrap"><div class="chart-title">S&P 500 vs ciclo de tasas FED 2020–2024</div><canvas id="chart-fed"></canvas></div>
+  <div class="example"><div class="example-ey">⬡ Ejemplo histórico — 2022–2024</div><div class="example-body">La FED subió tasas <strong>11 veces</strong> entre marzo 2022 y julio 2023 (+<span class="hn hn-r">525 pb</span>). El Nasdaq cayó <span class="hn hn-r">−32.5%</span> en 2022. NVIDIA perdió <span class="hn hn-r">−65%</span>. Cuando en agosto 2024 Powell anunció que "había llegado el momento de bajar tasas" en Jackson Hole, NVIDIA subió <span class="hn hn-g">+4.6%</span> ese mismo día. El S&P subió <span class="hn hn-g">+24%</span> en 2023 solo anticipando el pivote.</div></div>
+</section>
+
+<!-- INFLATION -->
+<section id="sec-inflation" class="section">
+  <div class="sec-eyebrow" style="color:var(--amber)">Macro · Mensual</div>
+  <div class="sec-title">Inflación</div>
+  <p class="sec-desc">El aumento generalizado de precios. El enemigo que la FED lucha con las tasas de interés.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Meta FED</div><div class="stat-val">2.0%</div></div>
+    <div class="stat"><div class="stat-label">Pico 2022</div><div class="stat-val">9.1%</div></div>
+    <div class="stat"><div class="stat-label">Nivel actual</div><div class="stat-val">~3.2%</div></div>
+  </div>
+  <div class="def-box">La inflación mide cuánto más caro es comprar la misma canasta de bienes y servicios que el año pasado. Expressed como porcentaje anual. La FED tiene mandato dual: <strong>máximo empleo + precios estables</strong>. Cuando la inflación supera el 2%, la FED prioriza bajarla aunque eso implique frenar la economía.</div>
+  <div class="formula">Inflación alta → FED sube tasas → crédito caro → bolsa cae | Inflación baja → FED baja tasas → crédito barato → bolsa sube</div>
+  <div class="scenarios">
+    <div class="sc bear"><div class="sc-badge">▼ Inflación > 3%</div><div class="sc-title">Entorno restrictivo</div><div class="sc-body">La FED actúa agresivamente. Los costos empresariales suben, los márgenes se comprimen. Típicamente bajista para la bolsa, especialmente growth y tech.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ Inflación ~2%</div><div class="sc-title">Entorno "Goldilocks"</div><div class="sc-body">La FED puede mantener o bajar tasas. Las empresas planifican mejor. El consumidor mantiene poder adquisitivo. Entorno ideal para la renta variable.</div></div>
+  </div>
+  <div class="chart-wrap"><div class="chart-title">Inflación CPI EE.UU. 2020–2024 (%)</div><canvas id="chart-inflation"></canvas></div>
+  <div class="example"><div class="example-ey">⬡ El Gran Ciclo Inflacionario 2021–2024</div><div class="example-body">COVID + estímulos fiscales de <span class="hn hn-b">$5 billones</span> + ruptura de cadenas de suministro → inflación sube a <span class="hn hn-r">9.1%</span> en jun 2022. La FED sube tasas agresivamente. Para finales de 2023, la inflación baja a <span class="hn hn-g">3.1%</span> y el mercado rebota. Lección: <strong>la dirección importa más que el nivel</strong>.</div></div>
+</section>
+
+<!-- CPI -->
+<section id="sec-cpi" class="section">
+  <div class="sec-eyebrow" style="color:var(--amber)">Inflación · BLS, mensual 8:30 AM ET</div>
+  <div class="sec-title">CPI / IPC</div>
+  <p class="sec-desc">El dato que más mueve los mercados en el corto plazo. Una diferencia de 0.1% puede mover el S&P más de 1%.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Vivienda (shelter)</div><div class="stat-val">~33%</div></div>
+    <div class="stat"><div class="stat-label">Alimentos</div><div class="stat-val">~14%</div></div>
+    <div class="stat"><div class="stat-label">Energía</div><div class="stat-val">~7%</div></div>
+    <div class="stat"><div class="stat-label">Categorías</div><div class="stat-val">~400</div></div>
+  </div>
+  <div class="def-box">El <strong>Consumer Price Index</strong> mide el cambio de precios de una canasta fija de bienes y servicios que consume un hogar urbano promedio. Se publica mensualmente por el Bureau of Labor Statistics. Hay dos versiones clave: <strong>CPI General</strong> (todo incluido) y <strong>CPI Core</strong> (excluye energía y alimentos por ser muy volátiles).</div>
+  <div class="tags"><span class="tag cool">CPI General</span><span class="tag warm">CPI Core (excl. energía/alimentos)</span><span class="tag">CPI Supernúcleo (servicios core)</span><span class="tag hot">Shelter CPI (vivienda)</span></div>
+  <div class="scenarios">
+    <div class="sc bear"><div class="sc-badge">▼ CPI > expectativa</div><div class="sc-title">Sorpresa hawkish</div><div class="sc-body">El mercado anticipa más subidas o mantenimiento de tasas. S&P y Nasdaq caen el día de la publicación. Los bonos también caen (yields suben).</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ CPI < expectativa</div><div class="sc-title">Sorpresa dovish</div><div class="sc-body">El mercado celebra y anticipa recortes. El 13 jul 2023, CPI=3.0% vs 3.1% esperado → S&P +0.85% ese día. Los bonos suben (yields bajan).</div></div>
+  </div>
+  <div class="example"><div class="example-ey">⬡ Mecánica real — Día de publicación CPI</div><div class="example-body">
+    <strong>8:30 AM ET:</strong> Se publica el dato.<br>
+    <strong>8:30:00–8:30:05:</strong> Los algoritmos HFT (high frequency trading) comparan real vs consenso en milisegundos.<br>
+    <strong>8:30:30:</strong> Los futuros del S&P ya se han movido <span class="hn hn-b">±0.5%–2%</span>.<br>
+    <strong>9:00–10:00 AM:</strong> Los traders humanos interpretan los sub-componentes (¿subió shelter? ¿servicios?)<br><br>
+    Una diferencia de <span class="hn hn-b">0.1%</span> puede mover el S&P <span class="hn hn-r">±1.5%</span>. El "Core" importa más que el general para la FED.
+  </div></div>
+</section>
+
+<!-- PCE -->
+<section id="sec-pce" class="section">
+  <div class="sec-eyebrow" style="color:var(--amber)">Inflación FED · BEA, mensual</div>
+  <div class="sec-title">PCE / Core PCE</div>
+  <p class="sec-desc">El indicador favorito de la FED. Menos famoso que el CPI pero más decisivo para las tasas.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Meta FED (Core PCE)</div><div class="stat-val">2.0%</div></div>
+    <div class="stat"><div class="stat-label">Vivienda PCE</div><div class="stat-val">~17%</div></div>
+    <div class="stat"><div class="stat-label">Salud PCE</div><div class="stat-val">~22%</div></div>
+  </div>
+  <div class="def-box">El <strong>Personal Consumption Expenditures</strong> mide el gasto de los hogares, pero con una canasta dinámica: si el pollo sube mucho y la gente compra carne de res, el PCE lo refleja. Esto lo hace más representativo del comportamiento real. Da mayor peso a salud (~22%) y menor a vivienda (~17% vs 33% del CPI), lo que lo hace típicamente ~0.4% menor.</div>
+  <div class="scenarios">
+    <div class="sc bull"><div class="sc-badge">▲ Core PCE → 2%</div><div class="sc-title">La FED puede recortar</div><div class="sc-body">Señal verde para el pivote. Los futuros del CME FedWatch suben la probabilidad de recortes. Las acciones growth anticipan el rally con meses de anticipación.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ Core PCE > 3%</div><div class="sc-title">"Higher for longer"</div><div class="sc-body">La FED no puede recortar. El costo de capital permanece alto. Las valuaciones de empresas con P/E elevado se comprimen. REIT y utilities bajo presión.</div></div>
+  </div>
+  <div class="example"><div class="example-ey">⬡ Agosto 2024 — El PCE que desbloqueó los recortes</div><div class="example-body">El Core PCE de julio 2024 salió en <span class="hn hn-g">2.6%</span>, bajando desde el pico de <span class="hn hn-r">5.6%</span> en feb 2022. Esto le dio a la FED la confianza para anunciar el <strong>primer recorte de tasas en 4 años</strong> (−50 pb en septiembre 2024). El S&P había subido <span class="hn hn-g">+20%</span> desde enero 2024 anticipando este momento.</div></div>
+</section>
+
+<!-- NFP -->
+<section id="sec-nfp" class="section">
+  <div class="sec-eyebrow" style="color:var(--green)">Empleo · BLS, primer viernes del mes</div>
+  <div class="sec-title">NFP &amp;<br>Desempleo</div>
+  <p class="sec-desc">El dato de empleo más esperado del mundo. Donde las buenas noticias económicas pueden ser malas para la bolsa.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Creación "sana"</div><div class="stat-val">150–200K</div></div>
+    <div class="stat"><div class="stat-label">Desempleo actual</div><div class="stat-val">~3.9%</div></div>
+    <div class="stat"><div class="stat-label">Pleno empleo</div><div class="stat-val">~4.0%</div></div>
+  </div>
+  <div class="def-box">El <strong>Non-Farm Payrolls</strong> cuenta los nuevos empleos creados fuera del sector agrícola en EE.UU. el mes anterior. Se publican junto con la tasa de desempleo (U-3) y los <strong>ingresos medios por hora</strong>. Este último componente es crítico: si los salarios suben demasiado rápido, la FED ve inflación futura y actúa.</div>
+  <div class="formula">NFP alto + salarios ↑ = FED hawkish = bolsa presionada | NFP moderado + desempleo ↑ = FED dovish = bolsa sube</div>
+  <div class="scenarios">
+    <div class="sc bear"><div class="sc-badge">▼ Paradoja bajista</div><div class="sc-title">NFP > 300K</div><div class="sc-body">Economía recalentada → FED no puede bajar tasas → "buenas noticias = malas noticias". Esto confunde a muchos traders nuevos. El mercado a veces cae con datos de empleo excelentes.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ "Soft landing"</div><div class="sc-title">NFP 100–180K + desempleo ↑</div><div class="sc-body">La economía se enfría suavemente sin colapsar. La FED puede recortar tasas. El S&P sube porque anticipa dinero más barato sin recesión. El "escenario perfecto" del mercado.</div></div>
+  </div>
+  <div class="chart-wrap"><div class="chart-title">NFP mensual EE.UU. (miles de empleos) 2022–2024</div><canvas id="chart-nfp"></canvas></div>
+  <div class="example"><div class="example-ey">⬡ La paradoja — Agosto 2024</div><div class="example-body">NFP de julio salió en <span class="hn hn-r">+114K</span> (vs +180K esperado) y el desempleo subió a <span class="hn hn-r">4.3%</span>. El mercado primero cayó por miedo a recesión, pero luego <strong>subió</strong> porque los inversores apostaron a que la FED bajaría <span class="hn hn-b">50 pb</span> en septiembre. Lo hizo. El S&P cerró positivo esa semana.</div></div>
+</section>
+
+<!-- PIB -->
+<section id="sec-pib" class="section">
+  <div class="sec-eyebrow" style="color:var(--accent2)">Crecimiento · BEA, trimestral</div>
+  <div class="sec-title">PIB (GDP)</div>
+  <p class="sec-desc">La fotografía más completa de la economía. Dos trimestres negativos = recesión oficial.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">PIB EE.UU. 2023</div><div class="stat-val">+2.5%</div></div>
+    <div class="stat"><div class="stat-label">Recesión técnica</div><div class="stat-val">2 trim. &lt;0</div></div>
+    <div class="stat"><div class="stat-label">Consumo / PIB</div><div class="stat-val">~70%</div></div>
+  </div>
+  <div class="def-box">El <strong>Producto Interno Bruto</strong> mide el valor de todos los bienes y servicios finales producidos en un territorio en un período. Se compone de: consumo privado (~70%), inversión empresarial (~18%), gasto gubernamental (~17%) y exportaciones netas. Se publica en 3 versiones: <strong>Avance</strong> (más movimiento de mercado), segunda estimación y final.</div>
+  <div class="scenarios">
+    <div class="sc bull"><div class="sc-badge">▲ PIB > expectativa</div><div class="sc-title">Expansión económica</div><div class="sc-body">Las empresas venden más, las ganancias crecen, las acciones suben. Pero si crece demasiado rápido, la FED puede subir tasas para evitar sobrecalentamiento.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ PIB negativo x2</div><div class="sc-title">Recesión oficial</div><div class="sc-body">Las empresas despiden, las ganancias caen, los inversores huyen a bonos y oro. S&P promedio: −32% durante recesiones históricas.</div></div>
+  </div>
+  <div class="example"><div class="example-ey">⬡ Recesiones vs bolsa — Historia</div><div class="example-body">
+    <strong>2008:</strong> PIB <span class="hn hn-r">−8.9%</span> en Q4 → S&P <span class="hn hn-r">−57%</span> desde pico.<br>
+    <strong>2020 COVID:</strong> PIB <span class="hn hn-r">−31.4%</span> en Q2 → S&P <span class="hn hn-r">−34%</span> en 33 días (la caída más rápida de la historia).<br>
+    <strong>2022:</strong> 2 trimestres negativos (recesión técnica) pero el mercado no colapsó porque el empleo siguió fuerte.<br>
+    <strong>2023:</strong> PIB <span class="hn hn-g">+2.5%</span> → S&P <span class="hn hn-g">+24%</span> en el año.
+  </div></div>
+</section>
+
+<!-- PMI -->
+<section id="sec-pmi" class="section">
+  <div class="sec-eyebrow" style="color:var(--accent2)">Actividad · ISM, primeros días del mes</div>
+  <div class="sec-title">ISM PMI</div>
+  <p class="sec-desc">El indicador adelantado por excelencia. Predice la economía 1–2 meses antes que el PIB.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">&gt;50 = Expansión</div><div class="stat-val" style="color:var(--green)">Alcista</div></div>
+    <div class="stat"><div class="stat-label">&lt;50 = Contracción</div><div class="stat-val" style="color:var(--red)">Bajista</div></div>
+    <div class="stat"><div class="stat-label">Servicios = % PIB</div><div class="stat-val">~77%</div></div>
+  </div>
+  <div class="def-box">El <strong>Purchasing Managers Index</strong> encuesta a directores de compras sobre 5 factores: nuevos pedidos (30%), producción (25%), empleo (20%), entregas de proveedores (15%) e inventarios (10%). Es el primer dato económico en salir cada mes y actúa como termómetro de la actividad futura. Hay <strong>PMI Manufacturero</strong> (industria, primeros días) y <strong>PMI de Servicios</strong> (más relevante, ~77% del PIB).</div>
+  <div class="scenarios">
+    <div class="sc bull"><div class="sc-badge">▲ PMI > 55</div><div class="sc-title">Expansión fuerte</div><div class="sc-body">Empresas reciben más pedidos, contratan más, producen más. Señal de ganancias corporativas crecientes en 1–2 trimestres. Industriales, tech y materiales se benefician.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ PMI &lt; 45</div><div class="sc-title">Contracción clara</div><div class="sc-body">Las empresas reducen pedidos e inventarios. Señal temprana de desaceleración. El mercado empieza a descontar menores ganancias futuras antes de que aparezcan en los reportes trimestrales.</div></div>
+  </div>
+  <div class="example"><div class="example-ey">⬡ PMI como señal temprana — 2022</div><div class="example-body">El PMI Manufacturero cruzó por debajo de <span class="hn hn-r">50</span> en noviembre 2022, meses antes de que el PIB confirmara la desaceleración. Los traders que usaron el PMI como señal salieron antes del pico del mercado. El PMI Servicios es hoy más vigilado: en ene 2023 rebotó a <span class="hn hn-g">55.2</span>, señalando la recuperación, y el S&P subió <span class="hn hn-g">+6%</span> ese mes.</div></div>
+</section>
+
+<!-- CONSUMER -->
+<section id="sec-consumer" class="section">
+  <div class="sec-eyebrow" style="color:#ff8099">Sentimiento · Mensual</div>
+  <div class="sec-title">Confianza del<br>Consumidor</div>
+  <p class="sec-desc">El termómetro del gasto. Si el consumidor está optimista, gasta. Si gasta, las empresas ganan.</p>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Consumo / PIB</div><div class="stat-val">~70%</div></div>
+    <div class="stat"><div class="stat-label">Conf. Board</div><div class="stat-val">Situación actual</div></div>
+    <div class="stat"><div class="stat-label">U. Michigan</div><div class="stat-val">Expectativas</div></div>
+  </div>
+  <div class="def-box">Hay dos fuentes principales: el <strong>Conference Board</strong> (más enfocado en empleo y condiciones actuales, mejor predictor de gasto a 3 meses) y la <strong>Universidad de Michigan</strong> (más enfocado en expectativas a 6 meses e incluye percepciones de inflación futura — la FED lo usa para calibrar expectativas inflacionarias del público).</div>
+  <div class="scenarios">
+    <div class="sc bull"><div class="sc-badge">▲ Confianza alta</div><div class="sc-title">El consumidor gasta</div><div class="sc-body">Más ventas en autos, viajes, ropa, electrónica y restaurantes. Amazon, Tesla, Nike, Booking, Visa — todo el consumo discrecional se beneficia. Ganancias corporativas suben.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ Confianza baja</div><div class="sc-title">El consumidor ahorra</div><div class="sc-body">En marzo 2020, la confianza colapsó y el S&P cayó 34% en semanas. Las empresas de lujo, viajes y restaurantes lideran las caídas. Walmart y Dollar General prosperan (value seeking).</div></div>
+  </div>
+  <div class="example"><div class="example-ey">⬡ COVID 2020 — El colapso y la recuperación más rápidos</div><div class="example-body">La confianza del consumidor cayó de <span class="hn hn-g">132</span> (feb 2020) a <span class="hn hn-r">85</span> (abril 2020) en solo 2 meses. El S&P cayó <span class="hn hn-r">−34%</span>. Con estímulos de $1,200 por persona y reapertura de economías, la confianza rebotó y el S&P recuperó todo en <span class="hn hn-g">5 meses</span>, el rebote más rápido de la historia desde una caída de esa magnitud.</div></div>
+</section>
+
+<!-- ======================== CALENDAR ======================== -->
+<section id="sec-calendar" class="section">
+  <div class="sec-eyebrow" style="color:#ff8099">Fechas · 2025</div>
+  <div class="sec-title">Calendario<br>Económico</div>
+  <p class="sec-desc">Las fechas más importantes del año para los mercados financieros. Planifica tus posiciones con anticipación.</p>
+  <div class="sec-divider">Próximas publicaciones estimadas</div>
+  <div class="cal-grid" id="cal-grid"></div>
+  <div class="sec-divider">Guía de impacto</div>
+  <div class="card-grid">
+    <div class="card"><span class="high" style="margin-bottom:8px;display:inline-block;">🔴 Impacto alto</span><div style="font-size:13px;color:var(--muted);line-height:1.7;margin-top:6px;">Decisiones FED, CPI, NFP, PIB avance. Pueden mover el S&P ±1–3% el día de publicación. Evita posiciones abiertas sin stops la noche anterior.</div></div>
+    <div class="card"><span class="med" style="margin-bottom:8px;display:inline-block;">🟡 Impacto medio</span><div style="font-size:13px;color:var(--muted);line-height:1.7;margin-top:6px;">PCE, PMI, Ventas minoristas, Confianza consumidor. Mueven mercados 0.5–1%. Importantes para confirmar tendencia pero raramente la cambian solas.</div></div>
+    <div class="card"><span class="low" style="margin-bottom:8px;display:inline-block;">🔵 Impacto bajo</span><div style="font-size:13px;color:var(--muted);line-height:1.7;margin-top:6px;">Peticiones de desempleo semanales, Órdenes de bienes duraderos, Permisos de construcción. Contexto adicional, rara vez mueven el mercado de forma aislada.</div></div>
+  </div>
+</section>
+
+<!-- ======================== SECTORS ======================== -->
+<section id="sec-sectors" class="section">
+  <div class="sec-eyebrow" style="color:var(--accent)">Referencia · Sectores del S&P 500</div>
+  <div class="sec-title">Sectores vs<br>Indicadores</div>
+  <p class="sec-desc">Qué sectores del S&P 500 ganan o pierden con cada indicador económico. Tu hoja de ruta para rotar posiciones.</p>
+  <table class="sector-table">
+    <thead><tr><th>Sector</th><th>Tasas ↑</th><th>Inflación ↑</th><th>NFP fuerte</th><th>Recesión</th><th>Recuperación</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Tecnología</strong></td><td><span class="tag-dn">Muy neg.</span></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-dn">Muy neg.</span></td><td><span class="tag-up">Muy pos.</span></td></tr>
+      <tr><td><strong>Financiero / Bancos</strong></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-dn">Muy neg.</span></td><td><span class="tag-up">Positivo</span></td></tr>
+      <tr><td><strong>Salud</strong></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-up">Defensivo</span></td><td><span class="tag-neu">Neutro</span></td></tr>
+      <tr><td><strong>Consumo básico</strong></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-neu">Mixto</span></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-up">Defensivo</span></td><td><span class="tag-dn">Rezagado</span></td></tr>
+      <tr><td><strong>Consumo discrecional</strong></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-dn">Muy neg.</span></td><td><span class="tag-up">Muy pos.</span></td></tr>
+      <tr><td><strong>Energía</strong></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-up">Positivo</span></td></tr>
+      <tr><td><strong>Real Estate (REITs)</strong></td><td><span class="tag-dn">Muy neg.</span></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-up">Muy pos.</span></td></tr>
+      <tr><td><strong>Utilities</strong></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-up">Defensivo</span></td><td><span class="tag-dn">Rezagado</span></td></tr>
+      <tr><td><strong>Materiales</strong></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-dn">Muy neg.</span></td><td><span class="tag-up">Muy pos.</span></td></tr>
+      <tr><td><strong>Industrial</strong></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-neu">Mixto</span></td><td><span class="tag-up">Positivo</span></td><td><span class="tag-dn">Neg.</span></td><td><span class="tag-up">Muy pos.</span></td></tr>
+    </tbody>
+  </table>
+  <div class="example"><div class="example-ey">⬡ Rotación de sectores — Estrategia práctica</div><div class="example-body">
+    <strong>Cuando la FED sube tasas:</strong> Rotar hacia bancos, energía y consumo básico. Reducir tech y REITs.<br>
+    <strong>Cuando la FED va a bajar tasas:</strong> Entrar en tech, REITs y consumo discrecional antes del pivote.<br>
+    <strong>En recesión:</strong> Refugiarse en salud, consumo básico y utilities (acciones defensivas).<br>
+    <strong>En recuperación:</strong> Industriales, materiales, tech y consumo discrecional lideran el rebote.
+  </div></div>
+</section>
+
+<!-- ======================== QUIZ ======================== -->
+<section id="sec-quiz" class="section">
+  <div class="sec-eyebrow" style="color:var(--green)">Aprendizaje · Test interactivo</div>
+  <div class="sec-title">Quiz de<br>Mercados</div>
+  <p class="sec-desc">Pon a prueba lo que aprendiste. 10 preguntas sobre indicadores económicos y su impacto en bolsa.</p>
+  <div id="quiz-container"></div>
+</section>
+
+<!-- ======================== GLOSSARY ======================== -->
+<section id="sec-glossary" class="section">
+  <div class="sec-eyebrow" style="color:var(--muted)">Referencia · Terminología financiera</div>
+  <div class="sec-title">Glosario<br>Financiero</div>
+  <p class="sec-desc">Los términos que escucharás constantemente en noticias financieras, podcasts y análisis de mercado.</p>
+  <input type="text" class="glos-search" id="glos-search" placeholder="Buscar término... (ej: hawkish, pivot, yield)" oninput="filterGlos()">
+  <div class="glos-items" id="glos-items"></div>
+</section>
+
+
+<!-- ======================== VI: 7 PRINCIPIOS ======================== -->
+<section id="sec-vi_principios" class="section">
+  <div class="sec-eyebrow" style="color:var(--amber)">Mis Anotaciones · Value Investing</div>
+  <div class="sec-title">Los 7<br>Principios</div>
+  <p class="sec-desc">Tu framework personal para evaluar acciones. Estos son los filtros que aplicas antes de entrar en cualquier posición.</p>
+
+  <!-- OVERVIEW CARDS -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:2rem;">
+    <div class="qcard" style="border-top-color:var(--accent);cursor:default"><div class="qcard-label" style="color:var(--accent)">01</div><div class="qcard-title">Price Target</div><div class="qcard-sub">¿Hasta dónde puede llegar?</div></div>
+    <div class="qcard" style="border-top-color:var(--green);cursor:default"><div class="qcard-label" style="color:var(--green)">02</div><div class="qcard-title">Crecimiento ventas</div><div class="qcard-sub">+20% anual mínimo</div></div>
+    <div class="qcard" style="border-top-color:var(--amber);cursor:default"><div class="qcard-label" style="color:var(--amber)">03</div><div class="qcard-title">SMA 200</div><div class="qcard-sub">Tendencia de largo plazo</div></div>
+    <div class="qcard" style="border-top-color:#ff8099;cursor:default"><div class="qcard-label" style="color:#ff8099">04</div><div class="qcard-title">Conference Call</div><div class="qcard-sub">Dirección habla</div></div>
+    <div class="qcard" style="border-top-color:var(--accent2);cursor:default"><div class="qcard-label" style="color:var(--accent2)">05</div><div class="qcard-title">P/E Ratio</div><div class="qcard-sub">Tiempo de recuperación</div></div>
+    <div class="qcard" style="border-top-color:var(--muted);cursor:default"><div class="qcard-label" style="color:var(--muted)">06</div><div class="qcard-title">Análisis técnico</div><div class="qcard-sub">Entrada y volatilidad</div></div>
+    <div class="qcard" style="border-top-color:var(--red);cursor:default"><div class="qcard-label" style="color:var(--red)">07</div><div class="qcard-title">Williams %R</div><div class="qcard-sub">Sobrecompra/sobreventa</div></div>
+  </div>
+
+  <!-- PRINCIPIO 1 -->
+  <div class="example" style="border-left:3px solid var(--accent);border-radius:0 10px 10px 0;">
+    <div class="example-ey" style="color:var(--accent)">Principio 01 — Price Target</div>
+    <div class="example-body">
+      <strong>¿Qué es?</strong> Estimación de hasta dónde puede llegar el precio de la acción según analistas y proyecciones propias.<br><br>
+      <strong>Tu fórmula:</strong><br>
+      <div class="formula" style="margin:0.75rem 0;text-align:left;font-size:0.8rem;">Price Target = Precio actual × (Market Cap futuro ÷ Market Cap presente)</div>
+      <strong>¿Cómo usarlo?</strong> Si el price target está <span class="hn hn-g">20%+ por encima</span> del precio actual, hay margen de seguridad. Si está por debajo o muy cerca, la acción puede estar cara ya.
+    </div>
+  </div>
+
+  <!-- PRINCIPIO 2 -->
+  <div class="example" style="border-left:3px solid var(--green);border-radius:0 10px 10px 0;">
+    <div class="example-ey" style="color:var(--green)">Principio 02 — Crecimiento en ventas</div>
+    <div class="example-body">
+      <strong>Tu regla:</strong> Una empresa growth debe crecer ventas mínimo <span class="hn hn-g">+20% anual</span> y ser rentable.<br><br>
+      <strong>¿Por qué importa?</strong> El precio de una acción a largo plazo sigue las ventas y las ganancias. Una empresa que crece ventas 20%+ anual dobla su tamaño cada ~3.5 años (regla del 72).<br><br>
+      <strong>¿Dónde lo miro?</strong> En el reporte trimestral (10-Q) y anual (10-K) en la línea "Revenue" o "Net Sales". También en páginas como Macrotrends, Wisesheets o la sección de investor relations de la empresa.
+      <div class="scenarios" style="margin-top:1rem;">
+        <div class="sc bull"><div class="sc-badge">▲ Positivo</div><div class="sc-title">Ventas crecen +20% YoY</div><div class="sc-body">Empresa en modo growth. Los inversores pagan premium (P/E alto) por empresas que crecen rápido.</div></div>
+        <div class="sc bear"><div class="sc-badge">▼ Señal de alerta</div><div class="sc-title">Ventas desaceleran o caen</div><div class="sc-body">Puede ser señal de saturación de mercado, competencia o problemas internos. Revisar guidance del CEO en conference call.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRINCIPIO 3 -->
+  <div class="example" style="border-left:3px solid var(--amber);border-radius:0 10px 10px 0;">
+    <div class="example-ey" style="color:var(--amber)">Principio 03 — Ley del SMA 200</div>
+    <div class="example-body">
+      <strong>¿Qué hace?</strong> Muestra el precio promedio de los últimos 200 días (en gráfico diario). Ayuda a:<br>
+      <div style="margin:0.5rem 0 0.5rem 1rem;font-size:0.85rem;line-height:1.9;">
+        1. Entender la tendencia de largo plazo del activo<br>
+        2. Identificar oportunidades de descuento (precio bajo la SMA200 = posible compra)<br>
+        3. Crear una posición con mejor precio de entrada
+      </div>
+      <strong>SMA vs EMA — tu nota:</strong>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:0.75rem;">
+        <div class="card"><div class="sc-badge" style="color:var(--accent)">SMA (Simple)</div><div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.7;">Promedio simple de los últimos N días. Todos los días pesan igual. Más lenta, menos ruido.</div></div>
+        <div class="card"><div class="sc-badge" style="color:var(--amber)">EMA (Exponential)</div><div style="font-size:12px;color:var(--muted);margin-top:5px;line-height:1.7;">Da más peso a los precios recientes. Reacciona más rápido. Útil para señales de entrada/salida a corto plazo.</div></div>
+      </div>
+      <div style="margin-top:0.75rem;font-size:0.85rem;color:var(--muted);">📍 <strong style="color:var(--white)">Tu uso:</strong> Se pone en timeframe diario (D). Para value investing, la SMA200 en diario es la más relevante.</div>
+    </div>
+  </div>
+
+  <!-- PRINCIPIO 4 -->
+  <div class="example" style="border-left:3px solid #ff8099;border-radius:0 10px 10px 0;">
+    <div class="example-ey" style="color:#ff8099">Principio 04 — Conference Call</div>
+    <div class="example-body">
+      <strong>¿Qué es?</strong> Llamada trimestral donde el CEO y CFO presentan resultados y responden preguntas de analistas de Wall Street.<br><br>
+      <strong>¿Qué buscar?</strong>
+      <div style="margin:0.5rem 0 0 1rem;font-size:0.85rem;line-height:1.9;">
+        • <strong style="color:var(--white)">Guidance:</strong> ¿Sube o baja las proyecciones para el próximo trimestre?<br>
+        • <strong style="color:var(--white)">Tono del CEO:</strong> ¿Confiado o evasivo ante las preguntas?<br>
+        • <strong style="color:var(--white)">Márgenes:</strong> ¿Están mejorando o comprimiéndose?<br>
+        • <strong style="color:var(--white)">Insiders:</strong> ¿Están comprando o vendiendo acciones propias?
+      </div>
+      <div style="margin-top:0.75rem;font-size:0.85rem;color:var(--muted);">📍 Puedes escuchar las conference calls en <strong style="color:var(--accent)">seekingalpha.com</strong> o leer la transcripción en el mismo sitio o en la sección de IR de la empresa.</div>
+    </div>
+  </div>
+
+  <!-- PRINCIPIO 5 -->
+  <div class="example" style="border-left:3px solid var(--accent2);border-radius:0 10px 10px 0;">
+    <div class="example-ey" style="color:var(--accent2)">Principio 05 — P/E Ratio</div>
+    <div class="example-body">
+      <strong>Tu definición:</strong> Cuántos años tardarías en recuperar tu inversión si la empresa mantiene sus ganancias actuales.<br><br>
+      <div class="formula" style="margin:0.75rem 0;text-align:left;font-size:0.82rem;">P/E = Precio de la acción ÷ EPS (Ganancias por acción)</div>
+      <strong>Tu ejemplo (AAPL):</strong> AAPL a $170, EPS = $6 → P/E = <span class="hn hn-b">28x</span> → recuperas la inversión en ~28 años si las ganancias no cambian.<br><br>
+      <strong>Tu insight clave:</strong> <em>"Puedes comprar una acción con P/E caro, pero si gana más dinero el EPS sube y el P/E baja automáticamente."</em> Por eso el P/E forward (proyectado) importa más que el trailing (histórico).<br><br>
+      <strong>Solvencia — tu regla:</strong> Para saber cuánto tiempo puede sobrevivir una empresa sin ingresos:<br>
+      <div class="formula" style="margin:0.75rem 0;text-align:left;font-size:0.82rem;">Meses de runway = Cash total ÷ (Total Operating Expenses ÷ 12)</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:0.5rem;">
+        <span class="tag warm">4 meses = Aceptable</span>
+        <span class="tag cool">6 meses = Óptimo</span>
+        <span class="tag" style="border-color:rgba(0,255,157,0.3);color:var(--green);">12 meses = Ideal</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================== VI: ANÁLISIS FUNDAMENTAL ======================== -->
+<section id="sec-vi_fundamentales" class="section">
+  <div class="sec-eyebrow" style="color:var(--amber)">Mis Anotaciones · Análisis Fundamental</div>
+  <div class="sec-title">Métricas<br>Fundamentales</div>
+  <p class="sec-desc">Las métricas clave para evaluar la salud y valor real de una empresa antes de invertir.</p>
+
+  <!-- EPS -->
+  <div class="example" style="border-left:3px solid var(--green);border-radius:0 10px 10px 0;margin-bottom:1.5rem;">
+    <div class="example-ey" style="color:var(--green)">EPS — Earnings Per Share (Ganancia por acción)</div>
+    <div class="example-body">
+      <strong>¿Qué es?</strong> Cuánto dinero gana la empresa por cada acción en circulación. Es la base para calcular el P/E Ratio.<br><br>
+      <div class="formula" style="margin:0.75rem 0;text-align:left;font-size:0.82rem;">EPS = Ganancia neta total ÷ Número de acciones en circulación</div>
+      <strong>Tu ejemplo:</strong> Empresa con $10M de ganancia y 1M de acciones → EPS = <span class="hn hn-g">$10 por acción</span>.<br><br>
+      <strong>EPS creciente = señal positiva.</strong> Lo que buscas es un EPS que crece trimestre a trimestre y año a año. Los analistas de Wall Street dan estimaciones de EPS antes de cada reporte — si la empresa las <span class="hn hn-g">supera ("beat")</span> la acción sube; si las <span class="hn hn-r">falla ("miss")</span> cae.
+      <div class="scenarios" style="margin-top:1rem;">
+        <div class="sc bull"><div class="sc-badge">▲ EPS Beat</div><div class="sc-title">Real > Estimado</div><div class="sc-body">La empresa ganó más de lo que Wall Street esperaba. Típicamente la acción sube en el after-hours el día del reporte.</div></div>
+        <div class="sc bear"><div class="sc-badge">▼ EPS Miss</div><div class="sc-title">Real &lt; Estimado</div><div class="sc-body">La empresa ganó menos de lo esperado. Puede caer 5–20% en un día. Revisar por qué: ¿problema puntual o tendencia?</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BETA -->
+  <div class="example" style="border-left:3px solid var(--accent);border-radius:0 10px 10px 0;margin-bottom:1.5rem;">
+    <div class="example-ey" style="color:var(--accent)">Beta — Volatilidad relativa al S&P 500</div>
+    <div class="example-body">
+      <strong>Tu definición:</strong> Qué tan volátil es una acción en relación al SPY (S&P 500). Mientras más se acerca a 1, se comporta similar al índice.<br><br>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0.75rem 0;">
+        <div class="stat"><div class="stat-label">Beta = 1.0</div><div class="stat-val" style="font-size:1rem;color:var(--amber)">= SPY</div></div>
+        <div class="stat"><div class="stat-label">Beta > 1 (ej. 1.5)</div><div class="stat-val" style="font-size:1rem;color:var(--red)">+50% volátil</div></div>
+        <div class="stat"><div class="stat-label">Beta &lt; 1 (ej. 0.5)</div><div class="stat-val" style="font-size:1rem;color:var(--green)">−50% volátil</div></div>
+        <div class="stat"><div class="stat-label">Beta negativo</div><div class="stat-val" style="font-size:1rem;color:var(--accent)">Inverso al SPY</div></div>
+      </div>
+      <strong>Ejemplo práctico:</strong> Si el S&P cae 10% y tu acción tiene Beta = 1.8, esperarías una caída de ~18%. Si tiene Beta = 0.4, solo ~4%.<br><br>
+      <strong>¿Dónde lo veo?</strong> En <span class="hn hn-b">Finviz.com</span> busca el ticker → aparece Beta en la tabla de métricas. También en Yahoo Finance en la sección de "Statistics".
+    </div>
+  </div>
+
+  <!-- ATR -->
+  <div class="example" style="border-left:3px solid var(--accent2);border-radius:0 10px 10px 0;margin-bottom:1.5rem;">
+    <div class="example-ey" style="color:var(--accent2)">ATR — Average True Range (Rango verdadero promedio)</div>
+    <div class="example-body">
+      <strong>Tu definición:</strong> Indicador que mide el rango promedio de las fluctuaciones de precio de un activo. Sirve para identificar su nivel de volatilidad.<br><br>
+      <strong>¿Para qué lo usas?</strong>
+      <div style="margin:0.5rem 0 0 1rem;font-size:0.85rem;line-height:1.9;">
+        • <strong style="color:var(--white)">Stop loss dinámico:</strong> Si el ATR es $3, pones el stop a 1.5–2x ATR ($4.5–$6) debajo del precio de entrada.<br>
+        • <strong style="color:var(--white)">Tamaño de posición:</strong> Cuanto mayor el ATR, menor la posición para mantener el riesgo controlado.<br>
+        • <strong style="color:var(--white)">Comparar activos:</strong> Una acción con ATR de $8 en un precio de $50 (16%) es mucho más volátil que otra con ATR de $2 en $100 (2%).
+      </div>
+      <div style="margin-top:0.75rem;font-size:0.85rem;color:var(--muted);">📍 <strong style="color:var(--white)">Dónde encontrarlo:</strong> Finviz.com → ticker → columna ATR. También en cualquier plataforma de charts (TradingView, ThinkorSwim).</div>
+    </div>
+  </div>
+
+  <!-- SOLVENCIA -->
+  <div class="example" style="border-left:3px solid var(--amber);border-radius:0 10px 10px 0;">
+    <div class="example-ey" style="color:var(--amber)">Solvencia — Meses de runway</div>
+    <div class="example-body">
+      <strong>Tu concepto:</strong> Las empresas miden su solvencia por cuántos meses pueden sobrevivir sin que entre dinero nuevo.<br><br>
+      <div class="formula" style="margin:0.75rem 0;text-align:left;font-size:0.82rem;">Runway = Cash total ÷ (Total Operating Expenses ÷ 12)</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:0.75rem;">
+        <span class="tag warm">4 meses = Aceptable (mínimo)</span>
+        <span class="tag cool">6 meses = Óptimo</span>
+        <span class="tag" style="border-color:rgba(0,255,157,0.3);color:var(--green);">12 meses = Ideal</span>
+      </div>
+      <strong>¿Por qué importa?</strong> Empresas con poco runway tienen que emitir nuevas acciones (dilución) o pedir deuda cara. Ambas son malas para el precio de la acción. Es especialmente crítico en startups, biotechs y empresas que aún no son rentables.
+    </div>
+  </div>
+</section>
+
+<!-- ======================== VI: ANÁLISIS TÉCNICO ======================== -->
+<section id="sec-vi_tecnico" class="section">
+  <div class="sec-eyebrow" style="color:var(--amber)">Mis Anotaciones · Análisis Técnico</div>
+  <div class="sec-title">Análisis<br>Técnico</div>
+  <p class="sec-desc">Las herramientas de precio y volatilidad que usas para identificar entradas, salidas y riesgo.</p>
+
+  <!-- VOLATILIDAD -->
+  <div class="sec-divider">Principios de volatilidad — tus 4 herramientas</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:2rem;">
+    <div class="sem-card" style="border-left-color:var(--red);">
+      <div class="sem-name">ATR</div>
+      <div class="sem-val">Avg True Range</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Rango promedio de movimiento diario. Úsalo para calcular stops y tamaño de posición.</div>
+    </div>
+    <div class="sem-card" style="border-left-color:var(--accent);">
+      <div class="sem-name">Beta</div>
+      <div class="sem-val">vs. SPY</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Qué tan volátil es la acción relativo al S&P 500. Beta 1 = igual que el índice.</div>
+    </div>
+    <div class="sem-card" style="border-left-color:var(--amber);">
+      <div class="sem-name">Volumen</div>
+      <div class="sem-val">Confirmación</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Movimiento con alto volumen = señal real. Movimiento con bajo volumen = puede ser trampa.</div>
+    </div>
+    <div class="sem-card" style="border-left-color:var(--accent2);">
+      <div class="sem-name">Volatilidad implícita</div>
+      <div class="sem-val">IV / VIX</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">Lo que el mercado espera que se mueva. Alta IV = opciones caras, acción puede estar en zona de decisión.</div>
+    </div>
+  </div>
+
+  <!-- WILLIAMS R -->
+  <div class="example" style="border-left:3px solid var(--red);border-radius:0 10px 10px 0;margin-bottom:1.5rem;">
+    <div class="example-ey" style="color:var(--red)">Principio 07 — Williams %R</div>
+    <div class="example-body">
+      <strong>Tu definición:</strong> Oscilador que mide el nivel del precio de cierre en relación con el rango máximo–mínimo de los últimos 14 días. Identifica sobrecompra y sobreventa.<br><br>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0.75rem 0;">
+        <div class="stat"><div class="stat-label">Rango</div><div class="stat-val" style="font-size:1rem;">0 a −100</div></div>
+        <div class="stat"><div class="stat-label">Sobrecompra</div><div class="stat-val" style="font-size:1rem;color:var(--red);">0 a −20</div></div>
+        <div class="stat"><div class="stat-label">Sobreventa</div><div class="stat-val" style="font-size:1rem;color:var(--green);">−80 a −100</div></div>
+      </div>
+      <strong>Tu señal de trading:</strong> <em>"Cuando viene de sobrecompra y llega a −40, puede dar un retorno significativo."</em> Se pone en <span class="hn hn-b">timeframe semanal</span> para señales más confiables.<br><br>
+      <div class="scenarios" style="margin-top:1rem;">
+        <div class="sc bull"><div class="sc-badge">▲ Señal de compra</div><div class="sc-title">Williams %R cruza de −80 hacia arriba</div><div class="sc-body">La acción estaba sobrevendida y empieza a recuperar momentum. En semanal, esta señal es más fuerte y confiable que en diario.</div></div>
+        <div class="sc bear"><div class="sc-badge">▼ Señal de precaución</div><div class="sc-title">Williams %R en zona 0 a −20</div><div class="sc-body">La acción está sobrecomprada. No es señal de venta automática, pero hay que estar atento a una reversión, especialmente si viene con divergencia de volumen.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMA/EMA DEEP -->
+  <div class="example" style="border-left:3px solid var(--amber);border-radius:0 10px 10px 0;margin-bottom:1.5rem;">
+    <div class="example-ey" style="color:var(--amber)">SMA 200 — Uso práctico</div>
+    <div class="example-body">
+      <strong>La regla de oro:</strong> La SMA 200 en gráfico diario es la línea de tendencia más vigilada por institucionales, fondos y traders profesionales.<br><br>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0.75rem 0;">
+        <div class="sc bull" style="margin:0;padding:0.85rem;">
+          <div class="sc-badge">▲ Precio &gt; SMA 200</div>
+          <div class="sc-body">Tendencia alcista de largo plazo. Los institucionales están en modo "hold" o comprando dips.</div>
+        </div>
+        <div class="sc bear" style="margin:0;padding:0.85rem;">
+          <div class="sc-badge">▼ Precio &lt; SMA 200</div>
+          <div class="sc-body">Tendencia bajista. Puede ser señal de salida o esperar a que el precio recupere la media antes de entrar.</div>
+        </div>
+      </div>
+      <strong>Golden Cross vs Death Cross:</strong>
+      <div style="margin:0.5rem 0 0 1rem;font-size:0.85rem;line-height:1.9;">
+        • <strong style="color:var(--green)">Golden Cross:</strong> SMA 50 cruza por encima de SMA 200 → señal alcista de largo plazo.<br>
+        • <strong style="color:var(--red)">Death Cross:</strong> SMA 50 cruza por debajo de SMA 200 → señal bajista de largo plazo.
+      </div>
+    </div>
+  </div>
+
+  <!-- TIPS GENERALES -->
+  <div class="card">
+    <div class="sc-badge" style="color:var(--amber);margin-bottom:0.75rem;">📌 Tus notas sobre tasas de interés y análisis técnico</div>
+    <div style="font-size:0.875rem;color:var(--muted);line-height:1.8;">
+      De tus anotaciones: <em>"Tasa de interés: si sube es para pausar inflación y recoger dinero de la economía — son importantes a nivel fundamental."</em><br><br>
+      Esto conecta con lo que ya sabes de los indicadores macro: las tasas de interés no son solo un dato fundamental — también tienen impacto técnico. Cuando la FED sube tasas, el volumen en sectores growth cae y los precios bajan la SMA 200, generando señales de muerte técnica. Cuando baja tasas, el volumen aumenta y los precios cruzan hacia arriba las medias móviles.
+    </div>
+  </div>
+</section>
+
+
+
+<!-- ======================== WATCHLIST ======================== -->
+<section id="sec-watchlist" class="section">
+  <div class="sec-eyebrow" style="color:var(--amber)">Herramienta · Datos en tiempo real</div>
+  <div class="sec-title">Mi<br>Watchlist</div>
+  <p class="sec-desc">Todas tus acciones de un vistazo. Se actualiza automáticamente cada 60 segundos.</p>
+
+  <!-- ADD TICKER -->
+  <div style="display:flex;gap:10px;margin-bottom:1.5rem;flex-wrap:wrap;">
+    <input type="text" id="wl-input" placeholder="Agregar ticker (ej: AAPL)" style="flex:1;min-width:160px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.65rem 1rem;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:13px;outline:none;transition:border 0.15s;" onfocus="this.style.borderColor='var(--amber)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')wlAdd()">
+    <button onclick="wlAdd()" style="background:var(--amber);border:none;border-radius:8px;padding:0.65rem 1.25rem;color:#000;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;cursor:pointer;">+ Agregar</button>
+    <button onclick="wlRefresh()" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:0.65rem 1.1rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;" title="Actualizar precios">↻ Actualizar</button>
+  </div>
+
+  <!-- SUGGESTED -->
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:2rem;align-items:center;">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);">Sugeridos:</span>
+    <button onclick="wlAddDirect('AAPL')"  class="tag" style="cursor:pointer;border:none;">AAPL</button>
+    <button onclick="wlAddDirect('MSFT')"  class="tag" style="cursor:pointer;border:none;">MSFT</button>
+    <button onclick="wlAddDirect('NVDA')"  class="tag" style="cursor:pointer;border:none;">NVDA</button>
+    <button onclick="wlAddDirect('TSLA')"  class="tag" style="cursor:pointer;border:none;">TSLA</button>
+    <button onclick="wlAddDirect('AMZN')"  class="tag" style="cursor:pointer;border:none;">AMZN</button>
+    <button onclick="wlAddDirect('META')"  class="tag" style="cursor:pointer;border:none;">META</button>
+    <button onclick="wlAddDirect('GOOG')"  class="tag" style="cursor:pointer;border:none;">GOOG</button>
+    <button onclick="wlAddDirect('AMD')"   class="tag" style="cursor:pointer;border:none;">AMD</button>
+    <button onclick="wlAddDirect('NFLX')"  class="tag" style="cursor:pointer;border:none;">NFLX</button>
+  </div>
+
+  <!-- STATUS BAR -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px;">
+    <div id="wl-status" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);"></div>
+    <div id="wl-timer" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);"></div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div id="wl-empty" style="text-align:center;padding:4rem 2rem;display:none;">
+    <div style="font-size:2rem;margin-bottom:1rem;">📋</div>
+    <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--white);margin-bottom:0.5rem;">Tu watchlist está vacía</div>
+    <div style="font-size:0.875rem;color:var(--muted);">Agrega tickers arriba para empezar a seguirlos</div>
+  </div>
+
+  <!-- SUMMARY ROW -->
+  <div id="wl-summary" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1rem 1.5rem;margin-bottom:1.5rem;">
+    <div style="display:flex;gap:2rem;flex-wrap:wrap;">
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Total acciones</div><div id="wl-total" style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--white);">0</div></div>
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Subiendo hoy</div><div id="wl-up" style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--green);">0</div></div>
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Bajando hoy</div><div id="wl-down" style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--red);">0</div></div>
+      <div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;">Pasan tus 7 principios</div><div id="wl-pass" style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--amber);">0</div></div>
+    </div>
+  </div>
+
+  <!-- CARDS GRID -->
+  <div id="wl-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;"></div>
+</section>
+
+
+<!-- ======================== SCREENER ======================== -->
+<section id="sec-screener" class="section">
+  <div class="sec-eyebrow" style="color:var(--green)">Herramienta · Datos reales · Alpha Vantage</div>
+  <div class="sec-title">Screener de<br>Acciones</div>
+  <p class="sec-desc">Analiza cualquier acción con tus 7 principios. Datos reales de mercado en tiempo real.</p>
+
+  <!-- SERVER STATUS -->
+  <div id="api-setup" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.25rem 1.75rem;margin-bottom:2rem;display:flex;align-items:center;gap:12px;">
+    <div id="server-dot" style="width:10px;height:10px;border-radius:50%;background:var(--amber);flex-shrink:0;"></div>
+    <div>
+      <div id="api-status" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);">Verificando conexión con el servidor...</div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;">Datos en tiempo real via Yahoo Finance · localhost:5050</div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div style="display:flex;gap:10px;margin-bottom:2rem;flex-wrap:wrap;">
+    <input type="text" id="ticker-input" placeholder="Ingresa ticker (ej: AAPL, NVDA, TSLA)" style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1rem;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:14px;outline:none;transition:border 0.15s;" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'" onkeydown="if(event.key==='Enter')fetchStock()">
+    <button onclick="fetchStock()" style="background:var(--green);border:none;border-radius:8px;padding:0.75rem 1.5rem;color:#000;font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">Analizar →</button>
+  </div>
+
+  <!-- QUICK TICKERS -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2rem;">
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-right:4px;align-self:center;">Populares:</span>
+    <button onclick="quickSearch('AAPL')" class="tag cool" style="cursor:pointer;border:none;">AAPL</button>
+    <button onclick="quickSearch('MSFT')" class="tag cool" style="cursor:pointer;border:none;">MSFT</button>
+    <button onclick="quickSearch('NVDA')" class="tag cool" style="cursor:pointer;border:none;">NVDA</button>
+    <button onclick="quickSearch('TSLA')" class="tag cool" style="cursor:pointer;border:none;">TSLA</button>
+    <button onclick="quickSearch('AMZN')" class="tag cool" style="cursor:pointer;border:none;">AMZN</button>
+    <button onclick="quickSearch('META')" class="tag cool" style="cursor:pointer;border:none;">META</button>
+    <button onclick="quickSearch('GOOG')" class="tag cool" style="cursor:pointer;border:none;">GOOG</button>
+  </div>
+
+  <!-- LOADING -->
+  <div id="screener-loading" style="display:none;text-align:center;padding:3rem;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);">
+    <div style="font-size:1.5rem;margin-bottom:0.5rem;animation:pulse-line 1s infinite;">⟳</div>
+    Consultando datos reales...
+  </div>
+
+  <!-- RESULTS -->
+  <div id="screener-results" style="display:none;">
+
+    <!-- HEADER ROW -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+      <div>
+        <div id="res-name" style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--white);line-height:1;"></div>
+        <div id="res-sector" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;"></div>
+      </div>
+      <div style="text-align:right;">
+        <div id="res-price" style="font-family:'Syne',sans-serif;font-size:2.5rem;font-weight:800;color:var(--green);"></div>
+        <div id="res-change" style="font-family:'IBM Plex Mono',monospace;font-size:12px;margin-top:2px;"></div>
+      </div>
+    </div>
+
+    <!-- SCORE GLOBAL -->
+    <div id="res-score-box" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:1.5rem 2rem;margin-bottom:2rem;text-align:center;">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;">Puntuación según tus 7 principios</div>
+      <div id="res-score" style="font-family:'Syne',sans-serif;font-size:3rem;font-weight:800;margin-bottom:0.25rem;"></div>
+      <div id="res-verdict" style="font-size:0.9rem;color:var(--muted);"></div>
+    </div>
+
+    <!-- 7 PRINCIPIOS CHECKLIST -->
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;">Checklist — Tus 7 principios</div>
+    <div id="res-checklist" style="display:flex;flex-direction:column;gap:8px;margin-bottom:2rem;"></div>
+
+    <!-- METRICAS GRID -->
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem;">Métricas clave</div>
+    <div id="res-metrics" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:2rem;"></div>
+
+    <!-- NOTAS -->
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Mis notas sobre esta acción</div>
+    <textarea id="stock-notes" placeholder="Escribe tus observaciones aquí... (se guardan automáticamente)" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:1rem;color:var(--text);font-family:'Inter',sans-serif;font-size:0.875rem;line-height:1.7;min-height:100px;outline:none;resize:vertical;transition:border 0.15s;" onfocus="this.style.borderColor='var(--accent)'" onblur="saveNote()" onkeyup="saveNote()"></textarea>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted);margin-top:6px;">Las notas se guardan en tu navegador automáticamente.</div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div id="screener-history" style="margin-top:2rem;display:none;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:0.75rem;">Búsquedas recientes</div>
+    <div id="history-list" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+  </div>
+</section>
+
+
+</div><!-- end page-wrap -->
+
+<script>
+// ===== DATA =====
+const INDICATORS = ['home','semaforo','diagram','calculator','watchlist','screener','fed','inflation','cpi','pce','nfp','pib','pmi','consumer','vi_principios','vi_fundamentales','vi_tecnico','calendar','sectors','quiz','glossary'];
+
+const SEMAFORO_DATA = [
+  {name:'Tasa FED',val:'5.25–5.50%',signal:'neutral',signalLabel:'Restrictivo',pct:75,desc:'Alta pero con expectativa de recortes'},
+  {name:'CPI (Inflación)',val:'3.2% YoY',signal:'bear',signalLabel:'Hawkish',pct:60,desc:'Por encima del objetivo del 2%'},
+  {name:'Core PCE',val:'2.6% YoY',signal:'neutral',signalLabel:'Vigilancia',pct:50,desc:'Bajando pero aún sobre meta'},
+  {name:'NFP (Empleos)',val:'+150K/mes',signal:'bull',signalLabel:'Saludable',pct:55,desc:'Moderación sin colapso = soft landing'},
+  {name:'Desempleo',val:'3.9%',signal:'bull',signalLabel:'Pleno empleo',pct:70,desc:'Muy cerca del pleno empleo'},
+  {name:'PIB EE.UU.',val:'+2.5%',signal:'bull',signalLabel:'Expansión',pct:65,desc:'Crecimiento sólido'},
+  {name:'PMI Servicios',val:'52.1',signal:'bull',signalLabel:'Expansión',pct:60,desc:'Por encima de 50, expansión'},
+  {name:'Confianza consumidor',val:'102.0',signal:'neutral',signalLabel:'Moderado',pct:50,desc:'Levemente por debajo del promedio histórico'},
+];
+
+const CALENDAR_DATA = [
+  {date:'Jun 11, 2025',name:'CPI — Mayo 2025',impact:'high',color:'var(--red)'},
+  {date:'Jun 18, 2025',name:'Decisión FED (FOMC)',impact:'high',color:'var(--red)'},
+  {date:'Jun 26, 2025',name:'PIB Q1 — 3ª estimación',impact:'high',color:'var(--red)'},
+  {date:'Jun 27, 2025',name:'PCE Core — Mayo 2025',impact:'high',color:'var(--red)'},
+  {date:'Jul 2, 2025',name:'NFP — Junio 2025',impact:'high',color:'var(--red)'},
+  {date:'Jul 3, 2025',name:'ISM PMI Servicios',impact:'med',color:'var(--amber)'},
+  {date:'Jul 10, 2025',name:'CPI — Junio 2025',impact:'high',color:'var(--red)'},
+  {date:'Jul 25, 2025',name:'PIB Q2 — 1ª estimación',impact:'high',color:'var(--red)'},
+  {date:'Jul 30, 2025',name:'Decisión FED (FOMC)',impact:'high',color:'var(--red)'},
+  {date:'Ago 1, 2025',name:'NFP — Julio 2025',impact:'high',color:'var(--red)'},
+  {date:'Ago 22, 2025',name:'Simposio Jackson Hole',impact:'high',color:'var(--red)'},
+  {date:'Sep 17, 2025',name:'Decisión FED (FOMC)',impact:'high',color:'var(--red)'},
+];
+
+const QUIZ_DATA = [
+  {q:'La FED acaba de subir tasas de 4% a 4.75%. ¿Qué sector del S&P 500 se beneficia más?',opts:['Tecnología (NASDAQ)','Bancos y financiero','Real Estate (REITs)','Utilities'],ans:1,exp:'Los bancos se benefician porque su margen de interés neto (diferencia entre lo que cobran en préstamos y lo que pagan en depósitos) se amplía cuando las tasas suben.'},
+  {q:'El CPI salió en 3.5% vs 3.2% esperado. ¿Cómo reacciona el mercado ese día?',opts:['El S&P sube porque la economía está fuerte','El S&P cae porque la FED mantendrá tasas altas','El S&P no se mueve, el CPI no importa ese día','Los bonos suben y las acciones también'],ans:1,exp:'Una sorpresa hawkish (CPI más alto de lo esperado) hace que el mercado anticipe que la FED mantendrá o subirá tasas, lo que presiona las valoraciones de las acciones a la baja.'},
+  {q:'El NFP salió en +350,000 empleos (muy por encima de los +175,000 esperados). ¿Qué pasa típicamente?',opts:['El S&P sube mucho porque la economía está muy bien','El S&P puede caer porque la FED no podrá bajar tasas','El dólar se debilita','Los bonos del Tesoro suben de precio'],ans:1,exp:'La paradoja del empleo: un NFP muy fuerte señala economía recalentada. La FED no puede recortar tasas porque hay riesgo inflacionario. "Buenas noticias económicas = malas noticias para la bolsa."'},
+  {q:'¿Cuál es el indicador de inflación favorito de la FED para tomar decisiones de tasas?',opts:['CPI General','CPI Core','Core PCE','ISM PMI'],ans:2,exp:'La FED usa el Core PCE (Personal Consumption Expenditures) como su medida preferida de inflación porque ajusta dinámicamente la canasta de consumo y da menos peso a la vivienda que el CPI.'},
+  {q:'El PIB anota dos trimestres consecutivos negativos. ¿Qué significa esto?',opts:['La bolsa sube porque la FED bajará tasas agresivamente','Es una recesión técnica. El S&P históricamente cae ~32% promedio','El dólar se fortalece y los commodities suben','No tiene impacto real en la bolsa'],ans:1,exp:'Dos trimestres consecutivos con PIB negativo es la definición técnica de recesión. Históricamente, el S&P 500 cae un promedio del 32% durante recesiones, aunque el mercado suele anticipar el fondo antes de que la economía toque mínimo.'},
+  {q:'El PMI de Servicios sale en 48.5 (vs 52.0 anterior). ¿Qué indica?',opts:['La economía de servicios está en expansión','La economía de servicios se está contrayendo','Es una señal neutral, 48.5 está cerca de 50','Los bancos se benefician de este dato'],ans:1,exp:'Un PMI por debajo de 50 indica contracción. Dado que los servicios representan ~77% del PIB de EE.UU., un PMI de servicios en contracción es una señal temprana de desaceleración económica.'},
+  {q:'La FED anuncia que "el momento de bajar tasas ha llegado". ¿Qué sectores LIDERAN el rally?',opts:['Bancos y financieras','Consumo básico y utilities','Tecnología, REITs y consumo discrecional','Solo el sector energético'],ans:2,exp:'Cuando la FED baja tasas, los sectores más sensibles a tasas lideran: tecnología (valuaciones se expanden), REITs (competencia con bonos desaparece) y consumo discrecional (crédito más barato para los consumidores).'},
+  {q:'¿Qué es el "soft landing"?',opts:['La FED sube tasas muy rápido y causa recesión','La inflación baja y el empleo se mantiene sólido sin recesión','El PIB cae dos trimestres seguidos','La FED no hace nada con las tasas'],ans:1,exp:'El "aterrizaje suave" es el escenario ideal: la FED logra bajar la inflación al 2% sin causar una recesión ni destruir el mercado laboral. Es el escenario que el mercado celebra porque permite recortes de tasas sin el riesgo de una recesión.'},
+  {q:'La confianza del consumidor cae drásticamente. ¿Qué empresa se beneficia MÁS de este entorno?',opts:['Tesla (autos de lujo)','Amazon Prime (e-commerce premium)','Walmart / Dollar General (value)','Booking.com (viajes)'],ans:2,exp:'Cuando la confianza cae, los consumidores buscan valor y reducen gastos discrecionales. Las tiendas de descuento como Walmart y Dollar General se benefician del "trading down" (consumidores que bajan a marcas más baratas).'},
+  {q:'¿Cuál de estos es un indicador ADELANTADO (predice el futuro económico)?',opts:['Tasa de desempleo','PIB trimestral','ISM PMI de nuevos pedidos','Ventas minoristas finales'],ans:2,exp:'El PMI (especialmente el subcomponente de Nuevos Pedidos) es adelantado porque refleja lo que las empresas están pidiendo HOY para producir en los próximos meses. El desempleo y el PIB son coincidentes o rezagados.'},
+];
+
+const GLOSSARY_DATA = [
+  {term:'Hawkish',cat:'Política monetaria',def:'Actitud de la FED orientada a subir tasas o mantenerlas altas para combatir la inflación. Un presidente de la FED "hawkish" prioriza la estabilidad de precios sobre el crecimiento. Negativo para acciones.'},
+  {term:'Dovish',cat:'Política monetaria',def:'Actitud de la FED orientada a bajar tasas o mantenerlas bajas para estimular la economía. Prioriza el empleo y el crecimiento. Positivo para acciones, especialmente tech y growth.'},
+  {term:'Pivot',cat:'Política monetaria',def:'El momento en que la FED cambia de dirección: de subir tasas a bajarlas (o viceversa). El "pivot dovish" es uno de los eventos más esperados por los mercados y suele generar rallies significativos.'},
+  {term:'Soft Landing',cat:'Economía macro',def:'Escenario ideal donde la FED logra bajar la inflación al 2% sin causar recesión ni destruir el empleo. La economía aterriza "suavemente". El mercado lo celebra con rallies fuertes.'},
+  {term:'Hard Landing',cat:'Economía macro',def:'Escenario donde el ajuste de la FED es tan agresivo que causa una recesión. El PIB cae, el desempleo sube y las ganancias corporativas colapsan. Típicamente bearish para la bolsa.'},
+  {term:'Tapering',cat:'Política monetaria',def:'Reducción gradual del programa de compra de bonos de la FED (QE). Cuando la FED "tapea", retira estímulos del mercado. Fue un factor clave en la caída del mercado de 2021–2022.'},
+  {term:'QE / Quantitative Easing',cat:'Política monetaria',def:'La FED compra bonos del Tesoro y MBS para inyectar dinero en el sistema financiero. Reduce las tasas de largo plazo y estimula la economía. Fue masivamente usado en 2008 y 2020.'},
+  {term:'QT / Quantitative Tightening',cat:'Política monetaria',def:'Lo opuesto al QE: la FED reduce su balance no reinvirtiendo bonos que vencen. Retira liquidez del mercado. La FED inició QT en 2022 como parte de su lucha contra la inflación.'},
+  {term:'Yield / Rendimiento',cat:'Bonos',def:'El retorno anual de un bono expresado como porcentaje. Cuando el precio de un bono sube, su yield baja (relación inversa). Los yields de los Bonos del Tesoro a 10 años son el "benchmark" global de tasas.'},
+  {term:'Yield Curve Inversion',cat:'Bonos',def:'Cuando los bonos de corto plazo (2 años) pagan más que los de largo plazo (10 años). Históricamente ha predicho recesiones con ~12–18 meses de anticipación. Se invirtió en 2022 y fue señal de alarma.'},
+  {term:'FOMC',cat:'Institucional',def:'Federal Open Market Committee. El comité de la FED que decide las tasas de interés. Se reúne 8 veces al año. Sus comunicados y conferencias de prensa post-reunión son seguidos palabra por palabra por los mercados.'},
+  {term:'Dot Plot',cat:'Institucional',def:'Gráfico publicado por la FED que muestra las proyecciones de tasas de cada miembro del FOMC. Los inversores lo usan para saber cuántos recortes o subidas esperan los propios miembros de la FED.'},
+  {term:'CPI Core / Subyacente',cat:'Inflación',def:'El CPI excluyendo energía y alimentos, que son muy volátiles. La FED mira más el Core porque representa mejor la tendencia inflacionaria de largo plazo, sin ruido de los precios de gasolina o comida.'},
+  {term:'P/E Ratio',cat:'Valoración',def:'Price-to-Earnings: cuánto paga el mercado por cada dólar de ganancia. Con tasas altas, los P/E se comprimen porque los bonos compiten con las acciones. Con tasas bajas, los P/E se expanden y las acciones valen más.'},
+  {term:'Risk-off / Risk-on',cat:'Sentimiento',def:'Risk-off: los inversores huyen de activos riesgosos (acciones, cryptos) hacia seguros (bonos, oro, dólar). Ocurre con miedo, datos malos o incertidumbre. Risk-on: el opuesto, se compran activos riesgosos con optimismo.'},
+  {term:'VIX / Fear Index',cat:'Volatilidad',def:'El índice de volatilidad implícita del S&P 500. Un VIX > 30 indica miedo extremo en el mercado. Históricamente los mejores momentos para comprar acciones han sido con VIX muy alto (contrarian indicator).'},
+  {term:'Fed Funds Futures / CME FedWatch',cat:'Derivados',def:'Contratos de futuros que descuentan las probabilidades de subidas o bajadas de tasas en cada reunión del FOMC. El CME FedWatch tool es la herramienta más usada para ver estas probabilidades en tiempo real.'},
+  {term:'Jackson Hole Symposium',cat:'Institucional',def:'Conferencia anual en Wyoming donde el presidente de la FED suele hacer anuncios importantes sobre política monetaria. En agosto 2024, Powell usó este evento para señalar el inicio de los recortes de tasas.'},
+];
+
+// ===== NAVIGATION =====
+function go(id){
+  document.querySelectorAll('.section, .hero-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.mobile-pill').forEach(p=>p.classList.remove('active'));
+  const sec = document.getElementById('sec-'+id);
+  if(sec) sec.classList.add('active');
+  // highlight nav by data-target attribute
+  document.querySelectorAll('.nav-item[data-target="'+id+'"]').forEach(n=>n.classList.add('active'));
+  document.querySelectorAll('.mobile-pill[data-target="'+id+'"]').forEach(p=>p.classList.add('active'));
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='fed' && !window.chartFedDone) initChartFed();
+  if(id==='inflation' && !window.chartInflDone) initChartInflation();
+  if(id==='nfp' && !window.chartNFPDone) initChartNFP();
+}
+
+// ===== MOBILE NAV =====
+function buildMobileNav(){
+  const labels = ['Inicio','Semáforo','Relaciones','Calculadora','Watchlist','Screener','FED','Inflación','CPI','PCE','NFP','PIB','PMI','Confianza','7 Principios','Fundamental','Técnico','Calendario','Sectores','Quiz','Glosario'];
+  const nav = document.getElementById('mobile-nav');
+  INDICATORS.forEach((id,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'mobile-pill' + (id==='home'?' active':'');
+    btn.textContent = labels[i];
+    btn.setAttribute('data-target', id);
+    btn.onclick = ()=>go(id);
+    nav.appendChild(btn);
+  });
+}
+
+// ===== TICKER =====
+function buildTicker(){
+  // Static fallback while live data loads
+  const fallback = [
+    ['S&P 500','—','up',''],['NASDAQ','—','up',''],['NVDA','—','up',''],
+    ['AAPL','—','up',''],['TSLA','—','up',''],['MSFT','—','up',''],
+    ['ORO','—','up',''],['10Y YIELD','—','up',''],['FED RATE','5.25–5.50%','up','']
+  ];
+  const track = document.getElementById('ticker-track');
+  function renderTicker(items){
+    let html = '';
+    for(let rep=0;rep<2;rep++){
+      items.forEach(([name,val,dir,chg])=>{
+        html += `<span class="ticker-item">${name} <span class="${dir}">${val}${chg?' '+chg:''}</span></span>`;
+      });
+    }
+    track.innerHTML = html;
+  }
+  renderTicker(fallback);
+
+  // Fetch live prices from our server
+  async function loadLiveTicker(){
+    const tickers = ['SPY','QQQ','NVDA','AAPL','TSLA','MSFT','GLD'];
+    const results = [];
+    for(const t of tickers){
+      try{
+        const r = await fetch((window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'?'http://localhost:5050':'')+'/stock/'+t, {signal: AbortSignal.timeout(5000)});
+        if(!r.ok) continue;
+        const d = await r.json();
+        if(d.price){
+          const chg = d.change != null ? (d.change>=0?'+':'')+d.change.toFixed(2)+'('+( d.change>=0?'+':'')+d.change_pct+'%)' : '';
+          const dir = d.change != null ? (d.change>=0?'up':'dn') : 'up';
+          const label = t==='SPY'?'S&P 500':t==='QQQ'?'NASDAQ':t==='GLD'?'ORO':t;
+          results.push([label,'$'+d.price.toFixed(2),dir,chg]);
+        }
+      } catch{}
+    }
+    // Add static macro data
+    results.push(['FED RATE','5.25–5.50%','up','']);
+    if(results.length > 2) renderTicker(results);
+  }
+  loadLiveTicker();
+}
+// ===== SEMAFORO =====
+function buildSemaforo(){
+  const grid = document.getElementById('semaforo-grid');
+  const bulls = SEMAFORO_DATA.filter(d=>d.signal==='bull').length;
+  const bears = SEMAFORO_DATA.filter(d=>d.signal==='bear').length;
+  const overall = document.getElementById('sem-overall');
+  const score = bulls - bears;
+  let label, cls, desc;
+  if(score >= 3){ label='MODERADAMENTE ALCISTA'; cls='bull'; desc='La mayoría de los indicadores apuntan positivo. El entorno macro favorece las acciones aunque con cautela por inflación aún elevada.'; }
+  else if(score <= -3){ label='BAJISTA'; cls='bear'; desc='Múltiples señales de presión sobre el mercado. Considerar posiciones defensivas.'; }
+  else { label='MIXTO / NEUTRAL'; cls='neutral'; desc='Señales contradictorias. La inflación aún está por encima del objetivo pero el empleo y el crecimiento son sólidos.'; }
+  overall.innerHTML = `<div class="sem-overall-title">Señal general del mercado</div>
+    <div class="sem-overall-val" style="color:${cls==='bull'?'var(--green)':cls==='bear'?'var(--red)':'var(--amber)'}">${label}</div>
+    <div class="sem-overall-desc">${desc}</div>`;
+  grid.innerHTML = SEMAFORO_DATA.map(d=>{
+    const col = d.signal==='bull'?'var(--green)':d.signal==='bear'?'var(--red)':'var(--amber)';
+    const cls2 = d.signal==='bull'?'bull-s':d.signal==='bear'?'bear-s':'neu-s';
+    return `<div class="sem-card">
+      <div class="sem-name">${d.name}</div>
+      <div class="sem-val">${d.val}</div>
+      <div class="sem-bar"><div class="sem-bar-fill" style="width:${d.pct}%;background:${col}"></div></div>
+      <span class="sem-signal ${cls2}">${d.signalLabel}</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;">${d.desc}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== CALENDAR =====
+function buildCalendar(){
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = CALENDAR_DATA.map(d=>{
+    const imp = d.impact==='high'?'high':d.impact==='med'?'med':'low';
+    const impLabel = d.impact==='high'?'🔴 Alto':d.impact==='med'?'🟡 Medio':'🔵 Bajo';
+    return `<div class="cal-card" style="border-left-color:${d.color}">
+      <div class="cal-date">${d.date}</div>
+      <div class="cal-name">${d.name}</div>
+      <div class="cal-impact"><span class="${imp}">${impLabel}</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ===== GLOSSARY =====
+function buildGlossary(){
+  const container = document.getElementById('glos-items');
+  container.innerHTML = GLOSSARY_DATA.map((g,i)=>`
+    <div class="glos-item" data-term="${g.term.toLowerCase()} ${g.def.toLowerCase()}">
+      <div class="glos-cat">${g.cat}</div>
+      <div class="glos-term">${g.term}</div>
+      <div class="glos-def">${g.def}</div>
+    </div>`).join('');
+}
+function filterGlos(){
+  const q = document.getElementById('glos-search').value.toLowerCase();
+  document.querySelectorAll('.glos-item').forEach(el=>{
+    el.classList.toggle('hidden', q && !el.dataset.term.includes(q));
+  });
+}
+
+// ===== QUIZ =====
+let quizIdx=0, quizScore=0, quizAnswered=false;
+function buildQuiz(){
+  renderQuestion();
+}
+function renderQuestion(){
+  const container = document.getElementById('quiz-container');
+  if(quizIdx>=QUIZ_DATA.length){
+    container.innerHTML = `
+      <div style="text-align:center;padding:3rem 1rem;">
+        <div style="font-family:'Syne',sans-serif;font-size:3rem;font-weight:800;color:var(--white);margin-bottom:0.5rem;">${quizScore}/${QUIZ_DATA.length}</div>
+        <div style="font-size:1rem;color:var(--muted);margin-bottom:2rem;">${quizScore>=8?'¡Excelente! Nivel avanzado 🏆':quizScore>=6?'Muy bien. Sigue practicando 📈':'Sigue aprendiendo. Repasa los indicadores 📚'}</div>
+        <button class="quiz-btn primary" onclick="quizIdx=0;quizScore=0;buildQuiz()">Repetir quiz</button>
+      </div>`;
+    return;
+  }
+  const q = QUIZ_DATA[quizIdx];
+  quizAnswered = false;
+  const dots = QUIZ_DATA.map((_,i)=>`<div class="qp-dot ${i<quizIdx?'done':i===quizIdx?'current':''}"></div>`).join('');
+  container.innerHTML = `
+    <div class="quiz-score">Pregunta ${quizIdx+1} de ${QUIZ_DATA.length} · ${quizScore} correctas</div>
+    <div class="quiz-progress">${dots}</div>
+    <div class="quiz-q">${q.q}</div>
+    <div class="quiz-opts">${q.opts.map((o,i)=>`<button class="quiz-opt" onclick="answerQuiz(${i})">${o}</button>`).join('')}</div>
+    <div class="quiz-feedback" id="qfb"></div>
+    <div id="quiz-next-wrap"></div>`;
+}
+function answerQuiz(i){
+  if(quizAnswered) return;
+  quizAnswered = true;
+  const q = QUIZ_DATA[quizIdx];
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach((o,idx)=>{
+    if(idx===q.ans) o.classList.add('correct');
+    else if(idx===i && i!==q.ans) o.classList.add('wrong');
+    else o.classList.add('reveal');
+    o.disabled = true;
+  });
+  const isCorrect = i===q.ans;
+  if(isCorrect) quizScore++;
+  const fb = document.getElementById('qfb');
+  fb.className = 'quiz-feedback show ' + (isCorrect?'ok':'ko');
+  fb.innerHTML = `<strong>${isCorrect?'✓ Correcto':'✗ Incorrecto'}</strong> — ${q.exp}`;
+  document.getElementById('quiz-next-wrap').innerHTML = `<button class="quiz-btn primary" onclick="quizIdx++;renderQuestion()" style="margin-top:1rem">${quizIdx+1<QUIZ_DATA.length?'Siguiente pregunta →':'Ver resultado'}</button>`;
+}
+
+// ===== CALCULATOR =====
+const CALC_CONFIG = {
+  cpi:{label:'CPI',higherIsBad:true,unit:'%',sectors:{good:['Energía','Materiales','Bancos'],bad:['Tech','REITs','Consumo discrecional']}},
+  nfp:{label:'NFP',higherIsBad:true,unit:'K',sectors:{good:['Bancos','Consumo discrecional'],bad:['Tech (si muy alto)','Bonos']}},
+  pib:{label:'PIB',higherIsBad:false,unit:'%',sectors:{good:['Industriales','Materiales','Tech'],bad:['Utilities','Consumo básico']}},
+  pmi:{label:'PMI',higherIsBad:false,unit:'',sectors:{good:['Industriales','Materiales'],bad:['Defensivos']}},
+  consumer:{label:'Confianza',higherIsBad:false,unit:'pts',sectors:{good:['Consumo discrecional','Viajes','Lujo'],bad:['Walmart/Dollar stores']}},
+  pce:{label:'Core PCE',higherIsBad:true,unit:'%',sectors:{good:['Energía'],bad:['Tech','REITs','Todo growth']}}
+};
+function calcUpdate(){
+  const ind = document.getElementById('calc-ind').value;
+  const exp = parseFloat(document.getElementById('calc-exp').value);
+  const real = parseFloat(document.getElementById('calc-real').value);
+  const res = document.getElementById('calc-result');
+  if(isNaN(exp)||isNaN(real)){res.innerHTML='<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--muted);">Ingresa ambos valores para ver el análisis</div>';return;}
+  const diff = real - exp;
+  document.getElementById('calc-diff').value = (diff>0?'+':'')+diff.toFixed(2)+' '+(CALC_CONFIG[ind].unit||'');
+  const cfg = CALC_CONFIG[ind];
+  const isBad = cfg.higherIsBad ? diff > 0 : diff < 0;
+  const isBull = !isBad;
+  const magnitude = Math.abs(diff);
+  let verdict, vclass, explain;
+  if(magnitude < 0.05 && ind!=='pmi'){
+    verdict='NEUTRAL'; vclass='neutral'; explain='La diferencia es muy pequeña. El mercado probablemente ya lo descontó. Reacción limitada esperada.';
+  } else if(isBull){
+    verdict='BULLISH'; vclass='bullish';
+    explain=`Sorpresa positiva para el mercado. ${cfg.label} real (${real}${cfg.unit}) es ${isBad?'mayor':'menor'} de lo esperado (${exp}${cfg.unit}), lo cual es BUENO para las acciones. Sectores beneficiados: ${cfg.sectors.good.join(', ')}.`;
+  } else {
+    verdict='BEARISH'; vclass='bearish';
+    explain=`Sorpresa negativa para el mercado. ${cfg.label} real (${real}${cfg.unit}) es ${isBad?'mayor':'menor'} de lo esperado (${exp}${cfg.unit}). Los sectores más afectados: ${cfg.sectors.bad.join(', ')}.`;
+  }
+  const tags = isBull ? cfg.sectors.good : cfg.sectors.bad;
+  res.innerHTML = `<div class="calc-verdict ${vclass}">${verdict}</div>
+    <div class="calc-explain">${explain}</div>
+    <div class="calc-sectors">${tags.map(t=>`<span class="tag ${isBull?'cool':'hot'}">${t}</span>`).join('')}</div>`;
+}
+
+// ===== CHARTS =====
+const CHART_DEFAULTS = {
+  plugins:{legend:{display:false},tooltip:{backgroundColor:'#1a1a24',titleColor:'#e8e8f0',bodyColor:'#6b6b80',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},
+  scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6b80',font:{family:'IBM Plex Mono',size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b6b80',font:{family:'IBM Plex Mono',size:10}}}}
+};
+function initChartFed(){
+  window.chartFedDone=true;
+  const ctx = document.getElementById('chart-fed').getContext('2d');
+  new Chart(ctx,{type:'line',data:{
+    labels:['Ene 20','Jul 20','Ene 21','Jul 21','Ene 22','Jul 22','Ene 23','Jul 23','Ene 24','Jul 24'],
+    datasets:[
+      {label:'S&P 500 (base 100)',data:[100,102,118,130,138,110,115,140,158,170],borderColor:'#00d4ff',tension:0.4,fill:false,pointRadius:3},
+      {label:'Tasa FED %',data:[0.25,0.25,0.25,0.25,0.25,2.25,4.5,5.25,5.5,5.25],borderColor:'#ff4d6d',tension:0.4,fill:false,pointRadius:3,yAxisID:'y2'}
+    ]
+  },options:{...CHART_DEFAULTS,scales:{...CHART_DEFAULTS.scales,y2:{position:'right',grid:{display:false},ticks:{color:'#ff4d6d',font:{family:'IBM Plex Mono',size:10}}}}}});
+}
+function initChartInflation(){
+  window.chartInflDone=true;
+  const ctx = document.getElementById('chart-inflation').getContext('2d');
+  new Chart(ctx,{type:'bar',data:{
+    labels:['Ene 21','Abr 21','Jul 21','Oct 21','Ene 22','Abr 22','Jul 22','Oct 22','Ene 23','Abr 23','Jul 23','Oct 23','Ene 24','Abr 24'],
+    datasets:[{label:'CPI %',data:[1.4,2.6,5.4,6.2,7.5,8.3,9.1,7.7,6.4,4.9,3.0,3.2,3.1,3.4],backgroundColor:ctx=>{const v=ctx.raw;return v>5?'rgba(255,77,109,0.7)':v>3?'rgba(255,183,0,0.7)':'rgba(0,255,157,0.6)';}}]
+  },options:{...CHART_DEFAULTS}});
+}
+function initChartNFP(){
+  window.chartNFPDone=true;
+  const ctx = document.getElementById('chart-nfp').getContext('2d');
+  new Chart(ctx,{type:'bar',data:{
+    labels:['Ene 22','Mar 22','May 22','Jul 22','Sep 22','Nov 22','Ene 23','Mar 23','May 23','Jul 23','Sep 23','Nov 23','Ene 24','Mar 24','May 24','Jul 24'],
+    datasets:[{label:'NFP (miles)',data:[504,572,390,315,263,200,504,248,310,236,246,199,353,296,218,114],backgroundColor:d=>d.raw>300?'rgba(255,77,109,0.7)':d.raw<150?'rgba(255,183,0,0.7)':'rgba(0,212,255,0.6)'}]
+  },options:{...CHART_DEFAULTS}});
+}
+
+// ===== INIT =====
+buildTicker();
+buildMobileNav();
+buildSemaforo();
+buildCalendar();
+buildGlossary();
+buildQuiz();
+
+// ======================== SCREENER JS ========================
+let currentTicker = '';
+let searchHistory = JSON.parse(localStorage.getItem('search_history') || '[]');
+const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5050' : '';
+
+// Check server on load
+window.addEventListener('load', async () => {
+  renderHistory();
+  try {
+    const r = await fetch((window.location.hostname==='localhost'||window.location.hostname==='127.0.0.1'?'http://localhost:5050':'')+'/stock/AAPL', {signal: AbortSignal.timeout(5000)});
+    if(r.ok){
+      document.getElementById('server-dot').style.background = 'var(--green)';
+      document.getElementById('api-status').textContent = '✓ Servidor conectado — datos en tiempo real activos';
+      document.getElementById('api-status').style.color = 'var(--green)';
+    } else { throw new Error(); }
+  } catch {
+    document.getElementById('server-dot').style.background = 'var(--red)';
+    document.getElementById('api-status').textContent = '✗ Servidor no detectado — ejecuta INICIAR.bat primero';
+    document.getElementById('api-status').style.color = 'var(--red)';
+  }
+});
+
+function quickSearch(t){
+  document.getElementById('ticker-input').value = t;
+  fetchStock();
+}
+
+async function fetchStock(){
+  const ticker = document.getElementById('ticker-input').value.trim().toUpperCase();
+  if(!ticker) return;
+  currentTicker = ticker;
+
+  document.getElementById('screener-loading').style.display = 'block';
+  document.getElementById('screener-results').style.display = 'none';
+
+  try {
+    const r = await fetch(`${API}/stock/${ticker}`, {signal: AbortSignal.timeout(15000)});
+    const data = await r.json();
+    if(!r.ok) throw new Error(data.error || 'Error desconocido');
+    data.ticker = ticker;
+    addToHistory(ticker);
+    renderResults(data);
+  } catch(e) {
+    document.getElementById('screener-loading').style.display = 'none';
+    document.getElementById('api-status').textContent = '✗ Error: ' + e.message + ' — ¿Está corriendo INICIAR.bat?';
+    document.getElementById('api-status').style.color = 'var(--red)';
+    document.getElementById('server-dot').style.background = 'var(--red)';
+  }
+}
+
+function renderResults(d){
+  document.getElementById('screener-loading').style.display = 'none';
+  document.getElementById('screener-results').style.display = 'block';
+
+  // Header
+  document.getElementById('res-name').textContent = d.name || d.ticker;
+  document.getElementById('res-sector').textContent = `${d.ticker} · ${d.sector||'—'} · ${d.industry||''}`;
+
+  const priceEl = document.getElementById('res-price');
+  priceEl.textContent = d.price ? '$' + d.price.toFixed(2) : '—';
+
+  const chEl = document.getElementById('res-change');
+  if(d.change != null){
+    const sign = d.change >= 0 ? '+' : '';
+    chEl.textContent = `${sign}${d.change.toFixed(2)} (${sign}${d.change_pct}%)`;
+    chEl.style.color = d.change >= 0 ? 'var(--green)' : 'var(--red)';
+  } else {
+    chEl.textContent = '';
+  }
+
+  // Score
+  const checks = buildChecks(d);
+  const passed = checks.filter(c => c.pass === true).length;
+  const total = checks.length;
+  const pct = Math.round(passed / total * 100);
+  const scoreEl = document.getElementById('res-score');
+  scoreEl.textContent = `${passed}/${total}`;
+  scoreEl.style.color = pct >= 70 ? 'var(--green)' : pct >= 50 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('res-verdict').textContent =
+    pct >= 70 ? '✓ Pasa el filtro — candidata a analizar más a fondo' :
+    pct >= 50 ? '⚠ Pasa parcialmente — revisa los puntos fallidos antes de entrar' :
+    '✗ No cumple los criterios mínimos — esperar o buscar otra';
+
+  // Checklist
+  document.getElementById('res-checklist').innerHTML = checks.map(c => `
+    <div style="display:flex;align-items:flex-start;gap:12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.85rem 1.1rem;border-left:3px solid ${c.pass===true?'var(--green)':c.pass===false?'var(--red)':'var(--muted)'}">
+      <span style="font-size:1rem;flex-shrink:0">${c.pass===true?'✅':c.pass===false?'❌':'⚪'}</span>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.875rem;color:var(--white);margin-bottom:2px;">${c.label}</div>
+        <div style="font-size:0.8rem;color:var(--muted);line-height:1.5;">${c.detail}</div>
+      </div>
+    </div>`).join('');
+
+  // Metrics grid
+  const fmt = (v, prefix='', suffix='', decimals=2) => v != null ? `${prefix}${typeof v==='number'?v.toFixed(decimals):v}${suffix}` : '—';
+  const fmtBig = v => {
+    if(!v) return '—';
+    if(v >= 1e12) return '$' + (v/1e12).toFixed(2) + 'T';
+    if(v >= 1e9)  return '$' + (v/1e9).toFixed(2) + 'B';
+    if(v >= 1e6)  return '$' + (v/1e6).toFixed(2) + 'M';
+    return '$' + v;
+  };
+  const metrics = [
+    {l:'Precio actual',      v: fmt(d.price,'$')},
+    {l:'Cambio hoy',         v: d.change!=null ? (d.change>=0?'+':'')+d.change.toFixed(2)+' ('+d.change_pct+'%)' : '—'},
+    {l:'P/E Trailing',       v: fmt(d.pe,'','x',1)},
+    {l:'P/E Forward',        v: fmt(d.forward_pe,'','x',1)},
+    {l:'EPS (TTM)',           v: fmt(d.eps,'$')},
+    {l:'EPS Forward',        v: fmt(d.eps_forward,'$')},
+    {l:'Beta',               v: fmt(d.beta,'','',2)},
+    {l:'Crec. ventas YoY',   v: fmt(d.revenue_growth,'',`%`,1)},
+    {l:'Margen neto',        v: fmt(d.profit_margin,'','%',1)},
+    {l:'SMA 200',            v: fmt(d.sma200,'$')},
+    {l:'Price Target medio', v: fmt(d.analyst_target,'$')},
+    {l:'Upside analistas',   v: d.analyst_target && d.price ? '+'+((d.analyst_target/d.price-1)*100).toFixed(1)+'%' : '—'},
+    {l:'Target alto',        v: fmt(d.analyst_high,'$')},
+    {l:'Target bajo',        v: fmt(d.analyst_low,'$')},
+    {l:'# Analistas',        v: d.num_analysts || '—'},
+    {l:'ATR (14d)',           v: fmt(d.atr,'$')},
+    {l:'Market Cap',         v: fmtBig(d.market_cap)},
+    {l:'Cash total',         v: fmtBig(d.total_cash)},
+    {l:'Deuda total',        v: fmtBig(d.total_debt)},
+    {l:'Runway (meses)',     v: d.runway_months ? d.runway_months+'m' : '—'},
+    {l:'52w Mínimo',         v: fmt(d.fifty_two_week_low,'$')},
+    {l:'52w Máximo',         v: fmt(d.fifty_two_week_high,'$')},
+    {l:'Dividendo',          v: d.dividend_yield ? d.dividend_yield+'%' : 'No paga'},
+    {l:'Short Ratio',        v: fmt(d.short_ratio)},
+  ];
+  document.getElementById('res-metrics').innerHTML = metrics.map(m =>
+    `<div class="stat"><div class="stat-label">${m.l}</div><div class="stat-val" style="font-size:0.95rem;">${m.v}</div></div>`
+  ).join('');
+
+  // Notes
+  document.getElementById('stock-notes').value = localStorage.getItem('note_' + d.ticker) || '';
+}
+
+function buildChecks(d){
+  const checks = [];
+
+  // 1. Price Target upside ≥20%
+  if(d.analyst_target && d.price){
+    const up = (d.analyst_target / d.price - 1) * 100;
+    checks.push({label:'1. Price Target con margen ≥20%', pass: up >= 20,
+      detail:`Upside: +${up.toFixed(1)}% · Target $${d.analyst_target} vs precio actual $${d.price.toFixed(2)} · ${d.num_analysts||'?'} analistas`});
+  } else {
+    checks.push({label:'1. Price Target con margen ≥20%', pass:null, detail:'Sin datos de analistas disponibles'});
+  }
+
+  // 2. Revenue growth ≥20%
+  if(d.revenue_growth != null){
+    checks.push({label:'2. Crecimiento ventas ≥20% anual', pass: d.revenue_growth >= 20,
+      detail:`Crecimiento YoY: ${d.revenue_growth.toFixed(1)}% ${d.revenue_growth>=20?'✓ Supera el mínimo':'— No alcanza el 20% mínimo'}`});
+  } else {
+    checks.push({label:'2. Crecimiento ventas ≥20% anual', pass:null, detail:'Sin datos — verifica en Macrotrends.net manualmente'});
+  }
+
+  // 3. SMA 200
+  if(d.above_sma200 != null){
+    checks.push({label:'3. Precio por encima de SMA 200', pass: d.above_sma200,
+      detail:`Precio: $${d.price?.toFixed(2)} · SMA200: $${d.sma200?.toFixed(2)} · Tendencia: ${d.above_sma200?'ALCISTA ✓':'BAJISTA — esperar recuperación'}`});
+  } else {
+    checks.push({label:'3. Precio por encima de SMA 200', pass:null, detail:'Sin datos de historial suficiente'});
+  }
+
+  // 4. Conference Call — always manual
+  checks.push({label:'4. Conference Call revisada', pass:null,
+    detail:'Verificación manual — ¿Escuchaste la última earnings call? ¿Guidance subió? ¿Tono del CEO positivo?'});
+
+  // 5. P/E razonable
+  if(d.pe != null){
+    checks.push({label:'5. P/E Ratio razonable (<50x)', pass: d.pe < 50,
+      detail:`P/E Trailing: ${d.pe.toFixed(1)}x · Forward: ${d.forward_pe?d.forward_pe.toFixed(1)+'x':'—'} ${d.pe<50?'✓':'— Muy elevado, requiere crecimiento >40%'}`});
+  } else {
+    checks.push({label:'5. P/E Ratio razonable (<50x)', pass:null, detail:'Sin datos de P/E — puede ser empresa sin ganancias aún'});
+  }
+
+  // 6. Beta
+  if(d.beta != null){
+    checks.push({label:'6. Volatilidad manejable (Beta <2.5)', pass: d.beta < 2.5,
+      detail:`Beta: ${d.beta} — ${d.beta<1?'Menos volátil que el SPY':d.beta<1.5?'Volatilidad moderada':d.beta<2?'Alta volatilidad':d.beta<2.5?'Muy alta, ajusta stops':'Extrema — riesgo elevado'}`});
+  } else {
+    checks.push({label:'6. Volatilidad manejable (Beta <2.5)', pass:null, detail:'Sin datos de Beta disponibles'});
+  }
+
+  // 7. Williams %R — always manual
+  checks.push({label:'7. Williams %R en zona favorable', pass:null,
+    detail:'Verificación manual — Abre TradingView, agrega Williams %R (14) en semanal. ¿Viene de sobreventa (−80/−100) hacia −40?'});
+
+  return checks;
+}
+
+function saveNote(){
+  const note = document.getElementById('stock-notes').value;
+  if(currentTicker) localStorage.setItem('note_' + currentTicker, note);
+}
+
+function addToHistory(ticker){
+  searchHistory = [ticker, ...searchHistory.filter(t => t !== ticker)].slice(0, 10);
+  localStorage.setItem('search_history', JSON.stringify(searchHistory));
+  renderHistory();
+}
+
+function renderHistory(){
+  if(searchHistory.length === 0) return;
+  document.getElementById('screener-history').style.display = 'block';
+  document.getElementById('history-list').innerHTML = searchHistory.map(t =>
+    `<button onclick="quickSearch('${t}')" class="tag cool" style="cursor:pointer;border:none;">${t}</button>`
+  ).join('');
+}
+
+
+// ======================== WATCHLIST JS ========================
+let wlTickers = JSON.parse(localStorage.getItem('watchlist') || '[]');
+let wlData = {};
+let wlInterval = null;
+let wlCountdown = 60;
+
+function wlSave(){ localStorage.setItem('watchlist', JSON.stringify(wlTickers)); }
+
+function wlAdd(){
+  const val = document.getElementById('wl-input').value.trim().toUpperCase();
+  if(!val) return;
+  wlAddDirect(val);
+  document.getElementById('wl-input').value = '';
+}
+
+function wlAddDirect(ticker){
+  ticker = ticker.toUpperCase().trim();
+  if(wlTickers.includes(ticker)){ 
+    document.getElementById('wl-status').textContent = ticker + ' ya está en tu watchlist';
+    return; 
+  }
+  wlTickers.push(ticker);
+  wlSave();
+  wlRenderCard(ticker, null); // render loading card
+  wlFetchOne(ticker);
+}
+
+function wlRemove(ticker){
+  wlTickers = wlTickers.filter(t => t !== ticker);
+  delete wlData[ticker];
+  wlSave();
+  wlRenderAll();
+}
+
+async function wlFetchOne(ticker){
+  const card = document.getElementById('wl-card-'+ticker);
+  if(card) card.style.opacity = '0.5';
+  try {
+    const r = await fetch('http://localhost:5050/stock/'+ticker, {signal: AbortSignal.timeout(10000)});
+    if(!r.ok) throw new Error('No encontrado');
+    const d = await r.json();
+    wlData[ticker] = d;
+  } catch(e) {
+    wlData[ticker] = {ticker, error: e.message};
+  }
+  wlRenderCard(ticker, wlData[ticker]);
+  wlUpdateSummary();
+}
+
+async function wlRefresh(){
+  document.getElementById('wl-status').textContent = 'Actualizando...';
+  wlCountdown = 60;
+  for(const t of wlTickers){ await wlFetchOne(t); }
+  const now = new Date().toLocaleTimeString('es-DO', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('wl-status').textContent = 'Actualizado a las ' + now;
+}
+
+function wlRenderCard(ticker, d){
+  const grid = document.getElementById('wl-grid');
+  let card = document.getElementById('wl-card-'+ticker);
+  
+  if(!card){
+    card = document.createElement('div');
+    card.id = 'wl-card-'+ticker;
+    grid.appendChild(card);
+  }
+
+  if(!d || !d.price){
+    card.innerHTML = `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.25rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+          <div style="font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:800;color:var(--white);">${ticker}</div>
+          <button onclick="wlRemove('${ticker}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;" title="Eliminar">×</button>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);">${d?.error || 'Cargando...'}</div>
+      </div>`;
+    card.style.opacity = '1';
+    return;
+  }
+
+  // Score quick check
+  const checks = buildChecks(d);
+  const passed = checks.filter(c=>c.pass===true).length;
+  const total = checks.length;
+  const pct = Math.round(passed/total*100);
+  const scoreColor = pct>=70?'var(--green)':pct>=50?'var(--amber)':'var(--red)';
+
+  const chgColor = d.change >= 0 ? 'var(--green)' : 'var(--red)';
+  const chgSign  = d.change >= 0 ? '+' : '';
+  const chgStr   = d.change != null ? `${chgSign}${d.change.toFixed(2)} (${chgSign}${d.change_pct}%)` : '—';
+  const aboveSMA = d.above_sma200;
+  const upside   = d.analyst_target && d.price ? ((d.analyst_target/d.price-1)*100).toFixed(1) : null;
+
+  card.innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:1.25rem;border-top:2px solid ${scoreColor};transition:all 0.2s;" onmouseenter="this.style.borderColor='${scoreColor}'" onmouseleave="this.style.borderTop='2px solid ${scoreColor}'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.75rem;">
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--white);line-height:1;">${ticker}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px;">${(d.name||'').split(' ').slice(0,3).join(' ')}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-family:'Syne',sans-serif;font-size:1.3rem;font-weight:700;color:var(--white);">$${d.price.toFixed(2)}</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:${chgColor};">${chgStr}</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:0.75rem;">
+        <div style="background:var(--bg2);border-radius:5px;padding:5px 8px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">P/E</div>
+          <div style="font-size:12px;color:var(--white);font-weight:500;">${d.pe?d.pe.toFixed(1)+'x':'—'}</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:5px;padding:5px 8px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Beta</div>
+          <div style="font-size:12px;color:var(--white);font-weight:500;">${d.beta??'—'}</div>
+        </div>
+        <div style="background:var(--bg2);border-radius:5px;padding:5px 8px;">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;">Ventas YoY</div>
+          <div style="font-size:12px;color:${d.revenue_growth>=20?'var(--green)':d.revenue_growth!=null?'var(--red)':'var(--muted)'};font-weight:500;">${d.revenue_growth!=null?d.revenue_growth.toFixed(1)+'%':'—'}</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);">SMA200: <span style="color:${aboveSMA?'var(--green)':'var(--red)'}">${aboveSMA!=null?(aboveSMA?'▲ Por encima':'▼ Por debajo'):'—'}</span></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);">Upside: <span style="color:${upside&&upside>=20?'var(--green)':upside?'var(--red)':'var(--muted)'}">${upside?'+'+upside+'%':'—'}</span></div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:0.6rem;border-top:1px solid var(--border);">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;">
+          <span style="color:${scoreColor};font-weight:600;">${passed}/${total} principios</span>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="go('screener');document.getElementById('ticker-input').value='${ticker}';fetchStock();" style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:9px;cursor:pointer;">Analizar →</button>
+          <button onclick="wlRemove('${ticker}')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;" title="Eliminar">×</button>
+        </div>
+      </div>
+    </div>`;
+  card.style.opacity = '1';
+  
+  // show/hide empty state
+  document.getElementById('wl-empty').style.display = wlTickers.length===0?'block':'none';
+  document.getElementById('wl-summary').style.display = wlTickers.length===0?'none':'block';
+}
+
+function wlRenderAll(){
+  const grid = document.getElementById('wl-grid');
+  grid.innerHTML = '';
+  if(wlTickers.length === 0){
+    document.getElementById('wl-empty').style.display = 'block';
+    document.getElementById('wl-summary').style.display = 'none';
+    return;
+  }
+  document.getElementById('wl-empty').style.display = 'none';
+  document.getElementById('wl-summary').style.display = 'block';
+  wlTickers.forEach(t => wlRenderCard(t, wlData[t]||null));
+  wlUpdateSummary();
+}
+
+function wlUpdateSummary(){
+  const loaded = Object.values(wlData).filter(d=>d&&d.price);
+  document.getElementById('wl-total').textContent = wlTickers.length;
+  document.getElementById('wl-up').textContent   = loaded.filter(d=>d.change>=0).length;
+  document.getElementById('wl-down').textContent  = loaded.filter(d=>d.change<0).length;
+  const passing = loaded.filter(d=>{ const c=buildChecks(d); return c.filter(x=>x.pass===true).length/c.length>=0.7; }).length;
+  document.getElementById('wl-pass').textContent = passing;
+}
+
+function wlStartAutoRefresh(){
+  if(wlInterval) clearInterval(wlInterval);
+  wlInterval = setInterval(async ()=>{
+    wlCountdown--;
+    document.getElementById('wl-timer').textContent = 'Auto-refresh en ' + wlCountdown + 's';
+    if(wlCountdown <= 0){
+      wlCountdown = 60;
+      await wlRefresh();
+    }
+  }, 1000);
+}
+
+// Init watchlist when section opens
+const _origGo = go;
+function go(id){
+  _origGo(id);
+  if(id === 'watchlist'){
+    wlRenderAll();
+    if(wlTickers.length > 0 && Object.keys(wlData).length === 0){
+      wlRefresh();
+    }
+    wlStartAutoRefresh();
+  } else {
+    if(wlInterval){ clearInterval(wlInterval); wlInterval=null; }
+  }
+}
+
+</script>
+</body>
+</html>
