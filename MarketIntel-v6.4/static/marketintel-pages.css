@@ -1,0 +1,1117 @@
+/* Page presentation only. Existing scripts own data, visibility and interactions. */
+@media screen {
+  .section:not(#sec-portafolio) {
+    font-size: var(--mi-md, 14px);
+    line-height: 1.65;
+  }
+
+  .section:not(#sec-portafolio) .sec-title {
+    max-width: 780px;
+    margin-bottom: 14px;
+    font-size: clamp(30px, 3vw, 38px);
+    line-height: 1.12;
+    letter-spacing: -.045em;
+  }
+
+  .section:not(#sec-portafolio) .sec-eyebrow {
+    margin-bottom: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.65;
+    letter-spacing: .12em;
+  }
+
+  .section:not(#sec-portafolio) .sec-desc {
+    max-width: 720px;
+    margin-bottom: 28px;
+    font-size: var(--mi-md, 14px);
+    line-height: 1.8;
+  }
+
+  /* Shared surfaces and readable educational content. */
+  .section:not(#sec-portafolio) :is(.card, .qcard, .stat, .example, .sc, .chart-wrap, .diagram-wrap, .def-box, .sem-card, .sem-overall) {
+    min-width: 0;
+    border-radius: var(--ui-radius, 16px);
+    background: var(--bg3);
+    box-shadow: var(--ui-shadow, 0 8px 24px rgba(0, 0, 0, .09));
+  }
+
+  .section:not(#sec-portafolio) :is(.card, .example, .chart-wrap, .diagram-wrap, .def-box) {
+    padding: 24px;
+  }
+
+  .section:not(#sec-portafolio) :is(.card-grid, .scenarios, .calc-grid) {
+    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  }
+
+  .section:not(#sec-portafolio) :is(.sc-body, .example-body, .def-box, .calc-explain, .sem-overall-desc) {
+    font-size: var(--mi-md, 14px);
+    line-height: 1.85;
+  }
+
+  .section:not(#sec-portafolio) :is(.stat-label, .sc-badge, .example-ey, .chart-title, .qcard-label, .sem-overall-title) {
+    font-size: 10px;
+    line-height: 1.65;
+    letter-spacing: .1em;
+  }
+
+  .section:not(#sec-portafolio) :is(.sc-title, .qcard-title) {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .section:not(#sec-portafolio) .qcard-sub {
+    margin-top: 8px;
+    font-size: 12px;
+    line-height: 1.65;
+  }
+
+  .section:not(#sec-portafolio) .stat {
+    padding: 18px;
+  }
+
+  .section:not(#sec-portafolio) .stat-val {
+    margin-top: 7px;
+    font-size: 24px;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+
+  .section:not(#sec-portafolio) .formula {
+    padding: 16px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+  }
+
+  .section:not(#sec-portafolio) .sector-table th {
+    padding: 14px 16px;
+    font-size: 10px;
+    background: var(--bg2);
+  }
+
+  .section:not(#sec-portafolio) .sector-table td {
+    padding: 14px 16px;
+    font-size: var(--mi-sm, 13px);
+    line-height: 1.7;
+  }
+
+  .section:not(#sec-portafolio) :is(.tag, .tag-up, .tag-dn, .tag-neu, .sem-signal) {
+    border-radius: 7px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  /* Existing inline styles provide accent colors; preserve those meanings. */
+  .section:not(#sec-portafolio) button {
+    min-height: var(--ui-control, 44px);
+    border-radius: 10px;
+    font-weight: 600;
+    line-height: 1.45;
+    transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease;
+    touch-action: manipulation;
+  }
+
+  .section:not(#sec-portafolio) button:hover {
+    box-shadow: 0 0 0 1px var(--border2);
+  }
+
+  .section:not(#sec-portafolio) button:is(
+    [style*="background:var(--accent2)"],
+    [style*="background: var(--accent2)"]
+  ),
+  #sec-chatbot .chat-send-btn {
+    color: #101725 !important;
+  }
+
+  .section:not(#sec-portafolio) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    min-width: 0;
+    max-width: 100%;
+    min-height: var(--ui-control, 44px) !important;
+    padding: 12px 14px;
+    border-radius: 10px !important;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .section:not(#sec-portafolio) input::placeholder,
+  .section:not(#sec-portafolio) textarea::placeholder {
+    color: var(--muted);
+    opacity: 1;
+  }
+
+  .section:not(#sec-portafolio) :is(.ind-tab, .hist-tab, .fund-tab, .hm-tab, .tag, .tv-interval-btn) {
+    min-height: 38px;
+    padding: 9px 14px !important;
+    border-radius: 10px !important;
+    font-size: 12px !important;
+    letter-spacing: 0;
+  }
+
+  .section:not(#sec-portafolio) .mi-range button {
+    min-width: 38px;
+    min-height: 36px;
+    font-size: 11px;
+  }
+
+  .section:not(#sec-portafolio) .mi-expand {
+    min-height: 36px;
+  }
+
+  :is(#wl-input, #ticker-input, #val-ticker, #ficha-ticker, #hm-new-group-input, #chat-apikey-input) {
+    min-height: 48px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 14px !important;
+  }
+
+  :is(#wl-input, #ticker-input, #val-ticker, #ficha-ticker, #hm-new-group-input, #chat-apikey-input) ~ button {
+    min-height: 48px;
+    padding-right: 20px !important;
+    padding-left: 20px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+  }
+
+  /* Macro: separate the live overview, news and learning tools. */
+  #sec-indicadores .mi-macro-live {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  #sec-indicadores .mi-macro-card {
+    min-height: 170px;
+    padding: 20px;
+    justify-content: flex-start;
+    border-radius: 14px;
+    background: var(--bg3);
+  }
+
+  #sec-indicadores .mi-macro-card > span {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  #sec-indicadores .mi-macro-card > strong {
+    margin: 9px 0;
+    font-size: 27px;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #sec-indicadores .mi-macro-card > small {
+    margin-top: 3px;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  #sec-indicadores :is(.mi-macro-empty, .mi-news-empty) {
+    padding: 24px;
+    border-radius: 12px;
+    font: 13px/1.75 'Inter', sans-serif;
+  }
+
+  #sec-indicadores .mi-macro-toolbar {
+    margin: 0 0 28px;
+    flex-wrap: wrap;
+    font: 12px/1.6 'Inter', sans-serif;
+  }
+
+  #sec-indicadores :is(.mi-news-block, .mi-live-signal) {
+    margin-bottom: 24px;
+    padding: 24px;
+    border-radius: var(--ui-radius, 16px);
+    background: var(--bg3);
+  }
+
+  #sec-indicadores :is(.mi-news-head h2, #macro-signal-title) {
+    margin-bottom: 8px;
+    font-size: 22px;
+    line-height: 1.4;
+  }
+
+  #sec-indicadores .mi-news-grid {
+    gap: 12px;
+  }
+
+  #sec-indicadores .mi-news-card {
+    padding: 18px;
+    border-radius: 12px;
+    background: var(--bg2);
+  }
+
+  #sec-indicadores .mi-news-card strong {
+    margin-top: 8px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  #sec-indicadores :is(.mi-news-card small, .mi-news-card span, #news-updated, .mi-data-disclaimer) {
+    font-size: 11px;
+    line-height: 1.7;
+  }
+
+  #sec-indicadores .sem-card {
+    padding: 20px;
+    background: var(--bg2);
+    box-shadow: none;
+  }
+
+  #sec-indicadores .sem-name {
+    font-size: 13px;
+  }
+
+  #sec-indicadores .sem-val {
+    margin-bottom: 12px;
+    font-size: 25px;
+  }
+
+  #sec-indicadores .sem-overall {
+    margin-top: 20px;
+    background: var(--bg2);
+    box-shadow: none;
+  }
+
+  #sec-indicadores .flow-node {
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
+
+  #sec-indicadores #diagram-toggle-btn {
+    padding: 16px 18px !important;
+    border-radius: 12px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 13px !important;
+  }
+
+  #sec-indicadores #ind-tabs {
+    gap: 8px !important;
+    padding-bottom: 20px !important;
+  }
+
+  /* Watchlist: useful density with more room for quote context. */
+  #sec-watchlist #wl-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)) !important;
+    gap: 16px !important;
+  }
+
+  #wl-grid > [id^="wl-card-"] {
+    min-width: 0;
+  }
+
+  #wl-grid > [id^="wl-card-"] > div {
+    height: 100%;
+    padding: 22px !important;
+    border-radius: var(--ui-radius, 16px) !important;
+    box-shadow: var(--ui-shadow, 0 8px 24px rgba(0, 0, 0, .09));
+  }
+
+  #wl-grid [style*="font-size:8px"],
+  #wl-grid [style*="font-size:9px"] {
+    font-size: 10px !important;
+    line-height: 1.65;
+  }
+
+  #wl-grid [style*="font-size:10px"],
+  #wl-grid [style*="font-size:11px"] {
+    font-size: 12px !important;
+    line-height: 1.65;
+  }
+
+  #wl-grid button {
+    min-height: 36px;
+    padding: 7px 12px !important;
+    border-radius: 8px !important;
+    font-size: 11px !important;
+  }
+
+  #wl-grid button[title="Eliminar"] {
+    min-width: 36px;
+    padding: 6px !important;
+    font-size: 20px !important;
+  }
+
+  #sec-watchlist #wl-summary {
+    padding: 22px !important;
+    border-radius: var(--ui-radius, 16px) !important;
+  }
+
+  #wl-summary > div {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px !important;
+  }
+
+  #wl-summary > div > div > div:first-child {
+    font-size: 10px !important;
+    line-height: 1.7;
+  }
+
+  #wl-summary :is(#wl-total, #wl-up, #wl-down, #wl-pass) {
+    margin-top: 6px;
+    font-size: 28px !important;
+  }
+
+  #sec-watchlist :is(#wl-status, #wl-timer) {
+    font-size: 11px !important;
+    line-height: 1.7;
+  }
+
+  #sec-watchlist #wl-empty {
+    border: 1px dashed var(--border2);
+    border-radius: var(--ui-radius, 16px);
+    background: var(--ui-soft, var(--bg2));
+  }
+
+  /* Screener results remain an uninterrupted analysis flow. */
+  #sec-screener #api-setup {
+    padding: 18px 22px !important;
+    border-radius: var(--ui-radius, 16px) !important;
+  }
+
+  #sec-screener #api-setup > div:last-child > div:last-child {
+    font-size: 12px !important;
+  }
+
+  #sec-screener :is(#res-score-box, #res-fairvalue) {
+    border-radius: var(--ui-radius, 16px) !important;
+  }
+
+  #res-checklist > div {
+    padding: 18px 20px !important;
+    border-radius: 12px !important;
+  }
+
+  #res-checklist > div > div > div:last-child {
+    font-size: 13px !important;
+    line-height: 1.75 !important;
+  }
+
+  #sec-screener #res-metrics {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  #res-metrics > div {
+    min-width: 0;
+    padding: 18px !important;
+    border-radius: 12px !important;
+  }
+
+  #res-metrics > div > div:first-child {
+    font-size: 10px !important;
+    line-height: 1.6;
+  }
+
+  #res-metrics > div > div:nth-child(2) {
+    margin-top: 7px;
+    font-size: 20px !important;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-screener .mi-chart-card {
+    padding: 22px;
+    border-radius: var(--ui-radius, 16px);
+  }
+
+  #sec-screener :is(.mi-chart-eyebrow, .mi-chart-source) {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  #sec-screener .mi-chart-heading {
+    font-size: 18px;
+  }
+
+  #sec-screener :is(.mi-chart-message, #hist-loading, #hist-insight) {
+    font-size: 13px !important;
+    line-height: 1.75;
+  }
+
+  #sec-screener #stock-notes,
+  #sec-ficha #ficha-notes {
+    padding: 18px !important;
+    min-height: 130px !important;
+    border-radius: 12px !important;
+    font-size: 14px !important;
+  }
+
+  /* Valuation: labels stay above each field and formulas retain their context. */
+  #sec-valuacion > .card {
+    margin-bottom: 22px !important;
+    padding: 26px;
+    border-radius: var(--ui-radius, 16px) !important;
+  }
+
+  #sec-valuacion .calc-grid {
+    align-items: end;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 20px;
+  }
+
+  #sec-valuacion .calc-field {
+    min-width: 0;
+  }
+
+  #sec-valuacion .calc-field label {
+    min-height: 38px;
+    margin-bottom: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.55;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  #sec-valuacion .calc-field input {
+    min-height: 48px !important;
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #sec-valuacion :is(#gn-result, #gf-result, #pt-result, #spt-result) {
+    padding: 20px !important;
+    border: 1px solid var(--border);
+    border-radius: 12px !important;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-valuacion > .card > div:last-child,
+  #sec-valuacion .val-auto-method {
+    font-size: 12px !important;
+    line-height: 1.8;
+  }
+
+  #sec-valuacion > .card > div:first-child > div > div:first-child {
+    font-size: 18px !important;
+    line-height: 1.5;
+  }
+
+  #sec-valuacion > .card > div:first-child > div > div:nth-child(2) {
+    margin-top: 4px;
+    font-size: 10px !important;
+    line-height: 1.6;
+  }
+
+  #sec-valuacion .val-auto-method {
+    margin-bottom: 16px;
+    padding: 14px;
+    border-radius: 10px;
+  }
+
+  /* Ficha: readable details, provenance and financial statements. */
+  #sec-ficha .mi-ficha-header,
+  #sec-ficha .mi-data-details,
+  #sec-ficha .ficha-block {
+    border-radius: var(--ui-radius, 16px) !important;
+  }
+
+  #sec-ficha .ficha-block > div:first-child {
+    padding: 15px 22px !important;
+    background: var(--bg2) !important;
+    font-size: 11px !important;
+    line-height: 1.65;
+  }
+
+  #sec-ficha .ficha-block [style*="text-transform:uppercase"] {
+    font-size: 10px !important;
+    color: var(--muted) !important;
+    line-height: 1.7;
+  }
+
+  #sec-ficha .ficha-block [style*="font-size:10px"]:not([style*="text-transform:uppercase"]),
+  #sec-ficha .ficha-block [style*="font-size:11px"] {
+    font-size: 12px !important;
+    line-height: 1.7;
+  }
+
+  #sec-ficha :is(#fc-meta, #fc-change, #fc-date, .mi-coverage) {
+    font-size: 12px !important;
+    line-height: 1.7;
+  }
+
+  #sec-ficha .mi-ficha-export {
+    margin-top: 14px;
+    min-height: 38px;
+    font-size: 12px;
+  }
+
+  #sec-ficha .mi-data-details > summary {
+    padding: 20px 22px;
+    background: var(--bg2);
+  }
+
+  #sec-ficha .mi-data-details > summary strong {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  #sec-ficha .mi-data-details > summary small {
+    font: 12px/1.65 'Inter', sans-serif;
+  }
+
+  #sec-ficha .mi-advanced-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    padding: 18px;
+    gap: 12px;
+  }
+
+  #sec-ficha .mi-advanced-metric {
+    min-height: 125px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  #sec-ficha .mi-advanced-metric > span {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+  }
+
+  #sec-ficha .mi-advanced-metric > strong {
+    margin: 10px 0;
+    font-size: 21px;
+  }
+
+  #sec-ficha :is(.mi-advanced-metric > small, .mi-metric-legend span, .mi-period-badge) {
+    padding: 3px 6px;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  #sec-ficha :is(.mi-source-row, .mi-audit-row, .mi-provenance-item > summary) {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  #sec-ficha :is(.mi-source-row strong, .mi-audit-row strong, .mi-provenance-item > summary strong, .mi-history-heading strong, .mi-history-grid h4) {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  #sec-ficha :is(.mi-source-row small, .mi-audit-row small, .mi-audit-note, .mi-audit-empty, .mi-provenance-item > summary small, .mi-integration-help, .mi-history-heading small, .mi-history-grid p) {
+    font-size: 12px;
+    line-height: 1.75;
+  }
+
+  #sec-ficha :is(.mi-source-row > b, .mi-audit-section-title, .mi-provenance-detail > span) {
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  #sec-ficha :is(.mi-provenance-detail b, .mi-integration-help strong, .mi-provenance-item > summary b) {
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  #sec-ficha .mi-history-table {
+    min-width: 0;
+  }
+
+  #sec-ficha .mi-history-grid > div {
+    padding: 16px;
+  }
+
+  #sec-ficha .mi-history-table :is(th, td) {
+    height: 42px;
+    padding: 10px;
+    font-size: 11px;
+  }
+
+  #sec-ficha .mi-history-table th {
+    font-size: 10px;
+  }
+
+  #sec-ficha .mi-provenance-detail {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  #sec-ficha .mi-provenance-detail > span {
+    padding: 12px;
+  }
+
+  /* Learning: consistent cards and comfortable reading measure. */
+  :is(#sec-vi_principios, #sec-vi_fundamentales) .example {
+    border-radius: var(--ui-radius, 16px) !important;
+  }
+
+  #sec-vi_principios .qcard {
+    padding: 20px;
+  }
+
+  :is(#sec-vi_principios, #sec-vi_fundamentales) .example-body strong {
+    font-weight: 650;
+    color: var(--white);
+  }
+
+  :is(#sec-vi_principios, #sec-vi_fundamentales) .example-ey {
+    margin-bottom: 16px;
+    font-size: 11px;
+  }
+
+  :is(#sec-vi_principios, #sec-vi_fundamentales) .sem-card {
+    padding: 22px;
+  }
+
+  /* Heatmap: retain provider dimensions and market-color encodings. */
+  #sec-heatmap #hm-tv-wrap {
+    border-radius: var(--ui-radius, 16px) !important;
+    box-shadow: var(--ui-shadow, 0 8px 24px rgba(0, 0, 0, .09));
+  }
+
+  #hm-custom-builder > div:first-child,
+  #sec-heatmap .hm-custom-group {
+    padding: 22px !important;
+    border-radius: var(--ui-radius, 16px) !important;
+  }
+
+  #sec-heatmap .hm-custom-group {
+    background: var(--bg2);
+  }
+
+  #sec-heatmap .hm-custom-group [data-group-name] {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-heatmap .hm-custom-group > div:first-child {
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  #sec-heatmap .hm-custom-group button {
+    min-height: 36px;
+    min-width: 36px;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+  }
+
+  #sec-heatmap [data-group-tickers] > span {
+    padding: 2px 5px 2px 12px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+  }
+
+  #sec-heatmap :is(.hm-sector-header, #hm-status, .hm-leg) {
+    font-size: 11px !important;
+    line-height: 1.7;
+  }
+
+  #sec-heatmap .hm-sector-header {
+    padding: 14px 0;
+  }
+
+  #sec-heatmap .hm-box {
+    border-radius: 8px;
+  }
+
+  #sec-heatmap .hm-ticker {
+    font-size: 12px;
+  }
+
+  #sec-heatmap .hm-price {
+    color: rgba(255, 255, 255, .8);
+    font-size: 10px;
+  }
+
+  /* MarketBot: readable conversation and keyboard-friendly composer. */
+  #sec-chatbot #chat-apikey-panel {
+    padding: 24px !important;
+    border-radius: var(--ui-radius, 16px) !important;
+  }
+
+  #sec-chatbot #chat-apikey-panel > p {
+    font-size: 13px !important;
+    line-height: 1.8 !important;
+  }
+
+  #sec-chatbot #chat-apikey-panel > p > span {
+    font-size: 12px !important;
+    line-height: 1.8;
+  }
+
+  #sec-chatbot #chat-apikey-panel + div {
+    border-radius: var(--ui-radius, 16px) !important;
+    box-shadow: var(--ui-shadow, 0 8px 24px rgba(0, 0, 0, .09));
+  }
+
+  #sec-chatbot #chat-apikey-panel + div > div:first-child {
+    padding: 16px 20px !important;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  #sec-chatbot #chat-apikey-panel + div > div:first-child button {
+    min-height: 36px;
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+  }
+
+  #sec-chatbot .chat-messages {
+    height: clamp(340px, 50vh, 580px);
+    padding: 24px;
+    gap: 18px;
+    scrollbar-width: thin;
+  }
+
+  #sec-chatbot .chat-msg {
+    max-width: min(88%, 760px);
+    padding: 18px 20px;
+    font-size: var(--mi-md, 14px);
+    line-height: 1.85;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-chatbot .chat-msg.bot {
+    border-radius: 14px 14px 14px 4px;
+  }
+
+  #sec-chatbot .chat-msg.user {
+    border-radius: 14px 14px 4px 14px;
+    background: var(--ui-soft, var(--bg3));
+    border: 1px solid var(--accent);
+    color: var(--text);
+  }
+
+  #sec-chatbot #chat-chips {
+    padding: 16px 20px !important;
+    gap: 8px !important;
+  }
+
+  #sec-chatbot .chat-chip {
+    min-height: 36px;
+    padding: 8px 12px;
+    font-size: 11px;
+    white-space: normal;
+    text-align: left;
+  }
+
+  #sec-chatbot .chat-input-row {
+    align-items: flex-end;
+    gap: 12px;
+    padding: 18px 20px;
+    background: var(--bg3);
+  }
+
+  #sec-chatbot .chat-input {
+    min-width: 0;
+    min-height: 48px !important;
+    padding: 12px 14px;
+  }
+
+  #sec-chatbot .chat-send-btn {
+    min-height: 48px;
+    padding: 12px 18px;
+  }
+
+  #sec-chatbot #chat-ideas {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  #sec-chatbot #chat-ideas > div,
+  #sec-chatbot #chat-ideas > button {
+    padding: 18px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    line-height: 1.7;
+  }
+
+  /* Small legacy labels occur in both static and rendered page content. */
+  :is(#sec-indicadores, #sec-screener, #sec-valuacion, #sec-vi_principios, #sec-vi_fundamentales) [style*="font-size:9px"] {
+    font-size: 10px !important;
+    line-height: 1.65;
+  }
+
+  :is(#sec-watchlist, #sec-screener, #sec-valuacion, #sec-heatmap) > div[style*="font-size:10px"],
+  #screener-results > div[style*="font-size:10px"],
+  #sec-ficha #ficha-content > div:last-child > div:first-child {
+    font-size: 11px !important;
+    line-height: 1.65;
+  }
+
+  /* Light theme uses the same surfaces, with no dark hard-coded panel fills. */
+  html.light-theme .section:not(#sec-portafolio) .quiz-feedback.ok {
+    color: var(--green);
+  }
+
+  html.light-theme .section:not(#sec-portafolio) .quiz-feedback.ko,
+  html.light-theme .section:not(#sec-portafolio) :is(.hn-r, .flow-node.trigger, .flow-node.result-bad, .tag.hot, .high) {
+    color: var(--red);
+  }
+
+  html.light-theme #sec-ficha .mi-ficha-header {
+    background: linear-gradient(120deg, rgba(8, 145, 178, .06), var(--bg3) 60%) !important;
+  }
+
+  html.light-theme #sec-watchlist #wl-empty svg rect,
+  html.light-theme #sec-watchlist #wl-empty svg line {
+    stroke: var(--accent);
+  }
+
+  html.light-theme .section:not(#sec-portafolio) button:is(
+    [style*="background:var(--accent)"],
+    [style*="background: var(--accent)"],
+    [style*="background:var(--green)"],
+    [style*="background: var(--green)"],
+    [style*="background:var(--amber)"],
+    [style*="background: var(--amber)"],
+    [style*="background:var(--accent2)"],
+    [style*="background: var(--accent2)"]
+  ),
+  html.light-theme .section:not(#sec-portafolio) .quiz-btn.primary,
+  html.light-theme .section:not(#sec-portafolio) .tv-interval-btn.active {
+    color: #fff !important;
+  }
+
+  html.light-theme #sec-chatbot .chat-send-btn {
+    color: #fff !important;
+  }
+
+  /* Compact mode remains a meaningful, smaller-density preference. */
+  body.mi-compact .section:not(#sec-portafolio) .sec-title {
+    font-size: 30px;
+  }
+
+  body.mi-compact .section:not(#sec-portafolio) :is(.mi-macro-card, .sem-card) {
+    padding: 16px;
+  }
+
+  body.mi-compact .section:not(#sec-portafolio) :is(input:not([type="checkbox"]):not([type="radio"]), select) {
+    min-height: 38px !important;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
+@media screen and (max-width: 1100px) {
+  #sec-indicadores .mi-news-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #sec-ficha .ficha-block > div[style*="grid-template-columns:1fr 1fr 1fr 1fr"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #sec-ficha .mi-history-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #wl-summary > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media screen and (max-width: 800px) {
+  .section:not(#sec-portafolio) :is(.card, .example, .chart-wrap, .diagram-wrap, .def-box) {
+    padding: 20px;
+  }
+
+  .section:not(#sec-portafolio) .sec-desc {
+    margin-bottom: 24px;
+  }
+
+  #sec-indicadores :is(.mi-news-block, .mi-live-signal) {
+    padding: 20px;
+  }
+
+  #sec-indicadores .mi-macro-live {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #sec-indicadores .mi-macro-card {
+    padding: 16px;
+  }
+
+  #sec-ficha .mi-advanced-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 14px;
+  }
+
+  #sec-ficha .ficha-block > div[style*="display:grid"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #sec-ficha .ficha-block > div[style*="display:grid"] > div {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-screener #res-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #sec-screener .mi-chart-card-head {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  #sec-valuacion .calc-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #sec-valuacion > .card {
+    padding: 20px;
+  }
+
+  #sec-chatbot .chat-messages {
+    padding: 18px;
+  }
+
+  #sec-chatbot .chat-msg {
+    max-width: 95%;
+  }
+}
+
+@media screen and (max-width: 560px) {
+  .section:not(#sec-portafolio) .sec-title {
+    font-size: 30px;
+  }
+
+  .section:not(#sec-portafolio) .sec-eyebrow {
+    max-width: 100%;
+    font-size: 10px;
+    letter-spacing: .08em;
+  }
+
+  .section:not(#sec-portafolio) :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    font-size: 16px !important;
+  }
+
+  :is(#wl-input, #ticker-input, #val-ticker, #ficha-ticker, #hm-new-group-input, #chat-apikey-input) {
+    width: 100%;
+    flex-basis: 100% !important;
+    min-width: 0 !important;
+  }
+
+  :is(#ticker-input, #val-ticker, #ficha-ticker, #chat-apikey-input) + button {
+    width: 100%;
+  }
+
+  #sec-indicadores :is(.mi-news-grid, .semaforo-grid),
+  #sec-valuacion .calc-grid,
+  #diagram-intro .diagram-wrap > div[style*="display:grid"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #sec-indicadores .mi-macro-card > strong {
+    font-size: 23px;
+  }
+
+  #sec-indicadores :is(.mi-news-block, .mi-live-signal) {
+    padding: 16px;
+  }
+
+  #sec-indicadores .mi-news-head {
+    gap: 12px;
+  }
+
+  #sec-indicadores .sem-overall {
+    padding: 22px 16px;
+  }
+
+  #wl-summary > div {
+    gap: 22px 14px !important;
+  }
+
+  #sec-screener .mi-chart-card {
+    padding: 16px;
+  }
+
+  #sec-screener .mi-chart-source {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #sec-screener #res-price {
+    font-size: 32px !important;
+  }
+
+  #sec-screener #res-name {
+    font-size: 28px !important;
+    line-height: 1.3 !important;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-valuacion .calc-field label {
+    min-height: 0;
+  }
+
+  #sec-ficha .mi-advanced-metric {
+    padding: 13px;
+  }
+
+  #sec-ficha .mi-advanced-metric > strong {
+    font-size: 19px;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-ficha .mi-data-details > summary {
+    padding: 18px 16px;
+  }
+
+  #sec-ficha .mi-source-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  #sec-ficha .mi-provenance-item > summary {
+    gap: 10px;
+  }
+
+  #sec-ficha .mi-provenance-item > summary > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-ficha .mi-history-table table {
+    min-width: 390px;
+  }
+
+  #sec-vi_principios > div[style*="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  #sec-vi_principios .qcard {
+    padding: 16px;
+  }
+
+  #sec-vi_principios .qcard-title {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+  }
+
+  #sec-chatbot :is(#chat-apikey-panel, #chat-apikey-panel + div > div:first-child) {
+    padding: 18px !important;
+  }
+
+  #sec-chatbot .chat-msg {
+    padding: 14px 16px;
+  }
+
+  #sec-chatbot .chat-input-row {
+    padding: 14px;
+    flex-wrap: wrap;
+  }
+
+  #sec-chatbot .chat-input {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  #sec-chatbot .chat-send-btn {
+    width: 100%;
+  }
+
+  #sec-chatbot #chat-chips {
+    padding: 14px !important;
+  }
+}

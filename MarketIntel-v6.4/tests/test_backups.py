@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -23,6 +24,59 @@ class BackupTests(unittest.TestCase):
         first=self.store.save_backup(self.payload,'browser-test');second=self.store.save_backup(self.payload,'browser-test')
         self.assertEqual(first['id'],second['id']);self.assertEqual(second['status'],'unchanged')
         self.assertEqual(len(self.store.list_backups()),1)
+
+    def test_notes_and_heatmap_groups_restore_exactly_alongside_older_backups(self):
+        old_payload = dict(self.payload['localStorage'])
+        first = self.store.save_backup(self.payload, 'browser-test')
+        groups = {'sectors': {'Tecnología e inversión 📈': ['AAPL', 'BRK-B']}}
+        self.payload['localStorage'].update({
+            'note_AAPL': 'Tesis: márgenes sólidos.\nRevisar después de resultados 📈',
+            'ficha_note_AAPL': 'Riesgo: concentración de clientes; revisión en español.',
+            'note_BRK-B': 'Acción clase B',
+            'ficha_note_^GSPC': 'Índice de referencia',
+            'note_EURUSD=X': 'Exposición al euro €',
+            'ficha_note_BRK.B': 'Símbolo con punto',
+            'hm_custom': json.dumps(groups, ensure_ascii=False),
+        })
+        second = self.store.save_backup(self.payload, 'browser-test')
+        reopened = LocalStore(self.temp.name)
+        self.assertEqual(reopened.read_backup(first['id'])['localStorage'], old_payload)
+        self.assertEqual(reopened.read_backup(second['id'])['localStorage'], self.payload['localStorage'])
+        self.assertEqual(reopened.read_backup(second['id'])['version'], 2)
+
+    def test_invalid_note_and_heatmap_keys_are_rejected_atomically(self):
+        invalid_keys = [
+            'note_', 'ficha_note_', 'note_aapl', 'ficha_note_aapl',
+            'note_AAPL extra', 'note_AAPL\n', 'note_AAPL/USD', 'note_AAPL_suffix',
+            'note_' + 'A' * 16, 'ficha_note_' + 'A' * 16,
+            'note_ÁAPL', 'note_AAPL<script>', 'hm_custom_extra', 'hm_custom_token',
+            'note_TOKEN', 'ficha_note_SECRET',
+        ]
+        for key in invalid_keys:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.store.save_backup({
+                    'localStorage': {'note_AAPL': 'Valid note', key: 'invalid'}
+                }, 'browser-test')
+        self.assertEqual(self.store.list_backups(), [])
+
+    def test_api_saves_and_retrieves_notes_and_heatmap_groups(self):
+        self.payload['localStorage'].update({
+            'note_BRK-B': 'Diversificación y disciplina 📈',
+            'ficha_note_^GSPC': 'Referencia del índice',
+            'note_EURUSD=X': 'Revisar cotización €',
+            'hm_custom': '{"sectors":{"Mis favoritas":["BRK-B"]}}',
+        })
+        client = servidor.app.test_client()
+        with patch.object(servidor, 'local_store', self.store):
+            headers = {'X-MarketIntel-Token': client.get('/local-state').get_json()['token']}
+            response = client.post('/local-backups', headers=headers, json={
+                'profile': 'browser-test', 'snapshot': self.payload,
+            })
+            self.assertEqual(response.status_code, 200)
+            saved = response.get_json()
+            restored = client.get('/local-backups/' + str(saved['id']), headers=headers)
+            self.assertEqual(restored.status_code, 200)
+            self.assertEqual(restored.get_json()['localStorage'], self.payload['localStorage'])
 
     def test_credentials_and_foreign_keys_are_rejected_atomically(self):
         for key in ['marketbot_apikey','mi_token','unrelated','__proto__']:

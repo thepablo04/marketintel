@@ -1,5 +1,35 @@
 # MarketIntel local · versión 6.4
 
+## Sincronización opcional · 6.4.4
+
+En **Portafolio → Sincronizar**, crea una sincronización en el dispositivo que ya tiene tus datos. Guarda la clave privada y pégala en **Vincular dispositivo** en https://marketintel-nu.vercel.app y en los otros equipos. También está disponible en el menú de herramientas. Actualiza primero la instalación local completa y sigue usando `INICIAR.bat`, el mismo navegador y `http://localhost:5050`.
+
+Se sincronizan cuentas y operaciones, notas del análisis y de la ficha, y watchlist. La copia se cifra en tu navegador antes de enviarse a un almacén privado en Vercel. La clave permite acceder a esa copia: compártela solo con tus dispositivos. Si la pierdes y no queda un dispositivo vinculado, no hay recuperación de la clave.
+
+Puedes seguir trabajando en local sin conexión. Los cambios guardados se envían cuando vuelve internet; la app también consulta cambios al volver a la pestaña, cada cinco minutos mientras está visible o al pulsar **Sincronizar ahora**. Si dos dispositivos cambian la misma cuenta o nota, revisa las versiones y elige cuál conservar o conserva ambas. Las cuentas se comparan completas para respetar el orden de las operaciones. Antes de aplicar datos recibidos se guarda un respaldo.
+
+Cierra otras pestañas de MarketIntel del mismo navegador para recibir cambios. Si hay un formulario abierto o estás editando, termina antes de aplicarlos. Desvincular conserva los datos de ese dispositivo. La sincronización necesita un navegador actualizado con Web Crypto y Web Locks, usando HTTPS en web o el servidor local; no funciona abriendo `index.html` directamente.
+
+La copia sincronizada admite hasta 2 MB de datos. Si el servicio no está disponible o agota su cuota, los datos locales permanecen y puedes reintentar. Las claves API, preferencias visuales, selección de cuenta, grupos del heatmap, respaldos e historial de señales siguen en cada dispositivo. Exportar/importar JSON continúa disponible como copia adicional o traslado manual.
+
+## Publicación web · 6.4.3
+
+La aplicación incluye un punto de entrada Flask para Vercel en la raíz del repositorio. Se conservan las mismas secciones, rutas y funciones al iniciar con `INICIAR.bat`.
+
+Los indicadores de FRED también se consultan mediante su descarga CSV pública oficial cuando no hay `FRED_API_KEY`. Si ya configuraste esa clave, se conserva el uso de la API. Las fórmulas, períodos y comprobaciones de antigüedad siguen siendo los mismos.
+
+El seguimiento de señales de la versión web también se conserva en IndexedDB de tu navegador. Registra una lectura por ventana válida, evalúa resultados con cierres anteriores verificados por el servidor y permite **Exportar seguimiento** desde Inicio. En local continúa usando SQLite. Los datos de cada navegador y dominio son independientes; el sitio publicado no lee los datos de tu instalación local automáticamente. Usa **Exportar todo JSON** e **Importar JSON** para trasladar tus cuentas, notas y listas.
+
+## Interfaz renovada · 6.4.2
+
+La actualización conserva el dashboard y sus herramientas, con una navegación más legible, tarjetas y formularios coherentes, mejor contraste y temas oscuro/claro. Incluye Inicio, Pulso macro, Screener, Ficha técnica, Valuación, Portafolio, Watchlist, Heatmap, 7 principios, Fundamental y MarketBot.
+
+En móvil, la navegación inferior y el menú **Más** permiten acceder a todas las secciones. El portafolio mantiene sus columnas y totales en una tabla que puedes deslizar horizontalmente. Se conservan Personalizar, organización y ancho de paneles, escala visual, densidad, comparación, enfoque, presentación y respaldos. Los controles de navegación también funcionan con teclado.
+
+Ejecuta **INICIAR.bat** desde la carpeta completa actualizada; abrir `index.html` directamente no inicia la aplicación completa. Si el navegador conserva estilos anteriores, recarga con **Ctrl + F5**. Los cambios visuales usan los mismos archivos estáticos y rutas tanto en local como en un servidor web; no añaden dependencias para ejecutar la aplicación. Publicar en Vercel sigue requiriendo desplegar Flask y sus rutas, además de los archivos estáticos.
+
+## Datos y cálculos de la versión 6.4
+
 En 6.4, el PIB del segundo trimestre se conserva en la lectura macro mientras siga dentro de su plazo de publicación trimestral: la fecha de la observación en FRED es el primer día del trimestre, por lo que el umbral anterior de 180 días lo excluía antes de publicarse el tercer trimestre. En el NFP, un incremento pequeño se identifica como «Enfriamiento» y se deja en vigilancia: menos contratación puede reducir presión inflacionaria, pero también puede señalar debilidad. No se convierte automáticamente en una señal favorable para la bolsa.
 
 En 6.3, los indicadores macro se consultan automáticamente al abrir la aplicación, cada cinco minutos mientras está abierta y al volver al navegador. Cada tarjeta muestra el período observado, la fuente y cuándo se recuperó; la fecha del período no se presenta como fecha de publicación. Si una fuente responde con un período más antiguo que otro disponible, se conserva el más reciente. Cuando falla o retrocede, la última lectura se muestra como no confirmada y queda fuera del semáforo. No se incluyen cifras precargadas.
@@ -10,7 +40,7 @@ El semáforo muestra señales favorables, desfavorables, en vigilancia y cuánta
 
 En Windows, cierra las ventanas anteriores de MarketIntel, descomprime el ZIP privado en una carpeta nueva y ejecuta INICIAR.bat. Usa el mismo navegador y http://localhost:5050 para conservar tus datos de esa PC. El arranque comprueba que abrió la carpeta correcta y avisa si otra versión ocupa el puerto.
 
-El ZIP privado conserva tu .env. No lo compartas ni lo publiques. La aplicación instala las dependencias faltantes la primera vez; necesita Python y conexión. Para iniciar manualmente: python -m pip install -r requirements.txt y después python servidor.py.
+Conserva tu archivo `.env` al actualizar: contiene configuración privada y no debes compartirlo ni publicarlo. El paquete actualizado no incluye credenciales; si ya usabas `.env`, cópialo desde tu carpeta anterior. La aplicación instala las dependencias faltantes la primera vez; necesita Python y conexión. Para iniciar manualmente: python -m pip install -r requirements.txt y después python servidor.py.
 
 ## Sesgo intradía y contexto
 
@@ -46,9 +76,21 @@ Los resultados se completan cuando una sesión posterior permite verificar el ci
 
 Portafolios, operaciones, watchlists y notas siguen en el navegador. Además, cada cambio de operaciones programa una copia local y se comprueban otros cambios cada 30 segundos mientras la página está visible. Se crea otra versión antes de importar, restaurar o eliminar operaciones/cuentas. Si esa copia previa falla, el cambio se cancela y muestra el motivo.
 
+Los respaldos completos incluyen también las notas del análisis y de la ficha técnica de cada símbolo, y todos los grupos personalizados del heatmap. Editar una nota o un grupo programa una copia, al igual que editar operaciones. En **Portafolio**, usa **Guardar ahora**, **Respaldos**, **Exportar todo JSON** o **Importar JSON**. La exportación completa también sigue disponible desde las herramientas generales; **Copia de cuenta** mantiene su alcance de una sola cuenta.
+
+Antes de importar o restaurar se muestra una vista previa con cuentas, operaciones, posiciones, notas, grupos y watchlist antes y después, y un detalle de las entradas que se añadirán, reemplazarán o eliminarán. **Cancelar** deja los datos intactos. Solo al confirmar se guarda la copia previa y se aplica el cambio. Una importación conserva las claves no incluidas en el archivo; una restauración reemplaza los datos respaldables. En ambos casos se conservan las notas y la configuración del heatmap ausentes en la copia, para que las copias antiguas no borren datos que todavía no respaldaban. Si la copia sí contiene `hm_custom`, sus grupos reemplazan la configuración actual completa.
+
 En Windows las copias y el seguimiento se guardan fuera de la instalación, en la carpeta MarketIntel dentro de LOCALAPPDATA. En Linux/macOS se usa XDG_DATA_HOME/MarketIntel o .local/share/MarketIntel en la carpeta personal. El archivo se llama marketintel.sqlite3. La variable MARKETINTEL_DATA_DIR permite elegir otra ubicación. Respaldos, en el portafolio, muestra la ruta real y permite restaurar o descargar JSON; Ver copias anteriores permite recorrer versiones más antiguas. Se conservan las versiones, sin borrado automático; vigila el espacio si guardas grandes cantidades de datos.
 
 Las copias solo son accesibles desde esta PC y excluyen claves API. Una copia en el mismo disco protege frente a un borrado del navegador, pero no frente a la pérdida del disco: conserva también un JSON en otro lugar. Para cambiar de PC, exporta/importa JSON; el ZIP de instalación no incluye tus operaciones del navegador ni el historial creado después de instalar. Los respaldos antiguos no se eliminan al actualizar el programa.
+
+### Uso web, incluido Vercel
+
+Al abrir MarketIntel mediante `localhost`, `127.0.0.1` o `::1`, los respaldos siguen usando SQLite en la carpeta local indicada arriba. En cualquier otro dominio, los respaldos de usuario se guardan en **IndexedDB del navegador**, separados de los datos activos. El panel indica qué almacenamiento se está usando. La web no envía estos respaldos a las rutas de almacenamiento local del servidor ni depende de un disco persistente de Vercel. Si el navegador impide guardar una copia previa, la acción protegida se cancela y se muestra el error; la exportación JSON sigue disponible.
+
+Los respaldos web pertenecen a ese navegador y dominio; la sincronización opcional comparte los datos activos indicados arriba, no el historial de respaldos. Borrar los datos del sitio puede borrar también sus respaldos y su clave de sincronización. Guarda tu clave y una exportación adicional. El traslado manual mediante **Exportar todo JSON** e **Importar JSON** sigue disponible, con vista previa. Las claves API quedan excluidas y deben configurarse por separado. Las copias JSON anteriores siguen siendo compatibles.
+
+La configuración completa de Flask para Vercel está en la raíz del repositorio, junto con `DEPLOY_VERCEL.md`. En Vercel, el servidor usa disco temporal únicamente para la caché de Yahoo; respaldos e historial de señales se conservan por navegador. El seguimiento mantiene su exportación separada y no forma parte del JSON de portafolios/notas. Las conexiones a proveedores y las fuentes opcionales siguen necesitando sus permisos o claves correspondientes.
 
 ## Verificación
 
@@ -78,6 +120,8 @@ El portafolio usa las transacciones como libro contable y conserva automáticame
 El resumen separa valor neto liquidativo, efectivo, poder de compra sin margen, P&L diario, P&L realizado y P&L no realizado. El precio promedio incorpora las comisiones de compra; las comisiones de venta se descuentan del resultado realizado.
 
 El gráfico histórico respeta la fecha de cada operación: una posición no aparece antes de su compra. La cuenta también puede compararse con S&P 500 y Nasdaq 100.
+
+Las operaciones nuevas registradas con la misma fecha conservan su orden de entrada: una venta posterior ya no puede adelantarse a su compra por el identificador aleatorio. Las copias antiguas siguen siendo compatibles.
 
 Usa **Exportar CSV** para descargar el historial de movimientos. **Copia de cuenta** crea un archivo JSON que puede importarse en otra computadora sin reemplazar las cuentas existentes. Las API keys no forman parte de esa copia.
 
@@ -130,7 +174,7 @@ Cada alerta de auditoría significa “revisar”, no necesariamente “dato inc
 - En **Personalizar → Escala visual** puedes elegir `Pequeña`, `Normal` o `Grande` sin cambiar la cantidad de información mostrada.
 - Usa el botón de ampliar de cada gráfico para abrir el **modo enfoque**. Presiona `Esc` para salir.
 - El gráfico del screener permite cambiar entre `1M`, `6M`, `1A` y `5A`.
-- En móvil, las tablas se convierten automáticamente en tarjetas legibles.
+- En móvil, las tablas de análisis se adaptan al espacio disponible; el portafolio permite desplazar horizontalmente sus columnas y totales.
 - El botón **Comparar** permite revisar hasta tres acciones lado a lado.
 - En **Personalizar → Organizar**, puedes arrastrar paneles y cambiar su ancho. Fuera de ese modo, el dashboard permanece bloqueado.
 - En el portafolio puedes elegir las columnas visibles.

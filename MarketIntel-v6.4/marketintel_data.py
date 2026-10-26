@@ -2,9 +2,12 @@
 
 Este módulo no depende de Flask ni de yfinance para que sus cálculos puedan
 probarse por separado. Yahoo Finance sigue siendo la fuente base de la app;
-FMP, SEC EDGAR y FRED se usan únicamente cuando están configurados.
+FMP y SEC EDGAR son opcionales. FRED admite su descarga CSV pública cuando
+no se ha configurado una clave para su API.
 """
 
+import csv
+import io
 import math
 import re
 import time
@@ -462,6 +465,42 @@ FRED_SERIES = {
 }
 
 
+def _fetch_fred_public_observations(requests_module, series_id, limit=73):
+    """Lee la descarga pública oficial sin cambiar serie, unidades ni frecuencia.
+
+    El CSV se entrega en orden ascendente. Se comprueban cabecera, fechas y
+    valores antes de adaptarlo al formato de observaciones de la API FRED.
+    """
+    if not re.fullmatch(r'[A-Z0-9]+', series_id):
+        raise ValueError('Serie FRED no válida')
+    today = datetime.now(timezone.utc).date().isoformat()
+    months = 240 if series_id == 'GDPC1' else 24 if series_id in {
+        'DFEDTARU', 'DFEDTARL', 'DGS10', 'BAMLH0A0HYM2', 'T10Y2Y'
+    } else 84
+    start = _shift_month(today, -months)
+    url = f'https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}&cosd={start}'
+    data = _cached_text(requests_module, url, ttl=300, timeout=7)
+    reader = csv.DictReader(io.StringIO(data.lstrip('\ufeff')))
+    fields = reader.fieldnames or []
+    if len(fields) != 2 or fields[0] not in {'observation_date', 'DATE'} or fields[1] != series_id:
+        raise ValueError('FRED CSV: cabecera o serie no verificable')
+    observations = []
+    for row in reader:
+        date = row.get(fields[0], '')
+        if not re.fullmatch(r'\d{4}-\d{2}-\d{2}', date) or date > today:
+            continue
+        try:
+            datetime.fromisoformat(date)
+        except ValueError:
+            continue
+        observations.append({'date': date, 'value': row.get(series_id)})
+    observations.sort(key=lambda row: row['date'], reverse=True)
+    observations = observations[:limit]
+    if not any(_valid_number(row['value']) is not None for row in observations):
+        raise ValueError('FRED CSV: sin observaciones numéricas verificables')
+    return {'observations': observations, 'fetched_at': _source_fetched_at(url)}
+
+
 def fetch_bls_cpi_snapshot(requests_module):
     """Obtiene el CPI headline NSA directamente desde la API pública de BLS."""
     year = datetime.now(timezone.utc).year
@@ -670,15 +709,11 @@ def fetch_fred_snapshot(requests_module, api_key):
             if key == 'consumer_sentiment':
                 try:
                     primary = fetch_michigan_sentiment_snapshot(requests_module)
-                    if not api_key:
-                        return key, primary, None
                 except Exception as exc:
                     primary_error = 'U. Michigan: ' + _safe_error(exc)
             if key == 'cpi':
                 try:
                     primary = fetch_bls_cpi_snapshot(requests_module)
-                    if not api_key:
-                        return key, primary, None
                 except Exception as exc:
                     primary_error = 'BLS: ' + _safe_error(exc)
             if key == 'pmi':
@@ -689,12 +724,8 @@ def fetch_fred_snapshot(requests_module, api_key):
             if key == 'core_pce':
                 try:
                     bea_primary = fetch_bea_core_pce_snapshot(requests_module)
-                    if not api_key:
-                        return key, bea_primary, None
                 except Exception as exc:
                     primary_error = 'BEA: '+_safe_error(exc)
-            if not api_key:
-                return key, None, f'{series_id}: FRED sin configurar' + ('; '+primary_error if primary_error else '')
             params = {
                 'series_id': series_id,
                 'api_key': api_key,
@@ -705,7 +736,10 @@ def fetch_fred_snapshot(requests_module, api_key):
                 'limit': 73,
             }
             try:
-                result = _cached_json_retry(requests_module, 'https://api.stlouisfed.org/fred/series/observations', params=params, ttl=300, timeout=6, attempts=2)
+                if api_key:
+                    result = _cached_json_retry(requests_module, 'https://api.stlouisfed.org/fred/series/observations', params=params, ttl=300, timeout=6, attempts=2)
+                else:
+                    result = _fetch_fred_public_observations(requests_module, series_id)
             except Exception:
                 if primary:
                     return key, primary, None
@@ -740,7 +774,7 @@ def fetch_fred_snapshot(requests_module, api_key):
                 'id': series_id, 'label': label, 'unit': unit, 'source': 'FRED',
                 'value': value, 'date': observation.get('date'),
                 'source_url': 'https://fred.stlouisfed.org/series/'+series_id,
-                'fetched_at': _source_fetched_at('https://api.stlouisfed.org/fred/series/observations', params),
+                'fetched_at': result.get('fetched_at') or _source_fetched_at('https://api.stlouisfed.org/fred/series/observations', params),
                 'published_at': None,
             }
             if primary_error:
@@ -895,9 +929,6 @@ def fetch_fred_sentiment(requests_module, api_key):
     riesgo financiero. Si FRED no está disponible, el consumidor puede
     recalcular el resultado con las señales de precios que sí existan.
     """
-    if not api_key:
-        return {'configured': False, 'status': 'disabled', 'series': {}, 'errors': []}
-
     series = {}
     errors = []
 
@@ -915,7 +946,7 @@ def fetch_fred_sentiment(requests_module, api_key):
                     'limit': 400,
                 },
                 ttl=900,
-            )
+            ) if api_key else _fetch_fred_public_observations(requests_module, series_id, limit=400)
             observations = result.get('observations') or []
             clean_observations = []
             for row in observations:
@@ -954,7 +985,7 @@ def fetch_fred_sentiment(requests_module, api_key):
                 errors.append(error)
 
     return {
-        'configured': True,
+        'configured': bool(api_key),
         'status': 'ok' if series else 'error',
         'series': series,
         'errors': errors,

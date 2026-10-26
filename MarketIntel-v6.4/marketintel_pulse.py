@@ -9,11 +9,13 @@ import time
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+from marketintel_storage import MODEL_VERSION
 
 CORE = ('SPY', 'QQQ', 'IWM', 'HYG', '^VIX')
 SECTORS = ('XLK', 'XLF', 'XLE', 'XLI', 'XLY', 'XLP', 'XLV', 'XLC', 'XLU', 'XLRE', 'XLB')
 TICKERS = CORE + SECTORS
 NY = ZoneInfo('America/New_York')
+EVALUATION_METHOD = 'SPY desde el precio registrado hasta el cierre de esa sesión. Zona neutral ±0.10%. Lecturas mixtas no cuentan como pronósticos direccionales. Observaciones del mismo día están correlacionadas. No incluye costos ni representa rentabilidad o probabilidad futura.'
 
 
 def number(value):
@@ -96,6 +98,26 @@ def daily_history(frame, ticker, session):
         day = pd.Timestamp(stamp).date().isoformat()
         if day < session['date'] and value is not None and value > 0:
             output[day] = value
+    return dict(sorted(output.items()))
+
+
+def completed_closes(history, session, now):
+    """Only verified, completed XNYS sessions may settle an observation."""
+    if not session.get('calendar_verified'):
+        return {}
+    output = {}
+    for day, value in history.items():
+        value = number(value)
+        if day >= session['date'] or value is None or value <= 0:
+            continue
+        try:
+            stamp = pd.Timestamp(day)
+            cal = calendar_for(stamp.year)
+            if cal.is_session(stamp) and cal.session_close(stamp) < pd.Timestamp(now):
+                output[day] = value
+        except Exception:
+            # Missing calendar data is not evidence that a session completed.
+            continue
     return dict(sorted(output.items()))
 
 
@@ -281,12 +303,17 @@ class PulseService:
                       'errors': errors + list(fred.get('errors') or []),
                       'retry_after_seconds': 300 if minute.empty else 60,
                       'disclaimer': 'Indicador heurístico experimental; no predice con certeza el cierre ni recomienda operaciones.'}
-            try:
-                self.store.settle_signals(histories.get('SPY', {}))
-                self.store.record_signal(result)
-                journal = self.store.signal_history()
-                result['evaluation'] = {'summary': journal['summary'], 'method': journal['method']}
-            except Exception as exc:
-                result['evaluation'] = {'error': 'No se pudo guardar el seguimiento local: '+type(exc).__name__}
+            closes = completed_closes(histories.get('SPY', {}), session, now)
+            result['evaluation'] = {'storage': 'browser' if self.store is None else 'local',
+                                    'model': MODEL_VERSION, 'method': EVALUATION_METHOD,
+                                    'completed_closes': closes}
+            if self.store is not None:
+                try:
+                    self.store.settle_signals(closes)
+                    self.store.record_signal(result)
+                    journal = self.store.signal_history()
+                    result['evaluation'].update(summary=journal['summary'], method=journal['method'])
+                except Exception as exc:
+                    result['evaluation']['error'] = 'No se pudo guardar el seguimiento local: '+type(exc).__name__
             self.result, self.result_at = result, time.monotonic()
             return result

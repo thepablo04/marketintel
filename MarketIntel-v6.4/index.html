@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<script src="/static/sync-preflight.js?v=6.4.4"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MarketIntel · Dashboard financiero</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230a0a0f'/><text x='4' y='24' font-size='22' font-family='Arial' font-weight='bold' fill='%2300d4ff'>M</text></svg>">
@@ -309,7 +310,11 @@ canvas{max-height:220px;}
 </style>
 <link rel="stylesheet" href="/static/marketintel-v2.css">
 <link rel="stylesheet" href="/static/portfolio-v3.css">
-<link rel="stylesheet" href="/static/marketintel-reliability.css?v=6.4">
+<link rel="stylesheet" href="/static/marketintel-reliability.css?v=6.4.1">
+<link rel="stylesheet" href="/static/marketintel-ui.css?v=6.4.2">
+<link rel="stylesheet" href="/static/marketintel-pages.css?v=6.4.2">
+<link rel="stylesheet" href="/static/portfolio-polish.css?v=6.4.2">
+<link rel="stylesheet" href="/static/sync-ui.css?v=6.4.4">
 </head>
 <body>
 <button id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
@@ -2802,7 +2807,7 @@ function buildChecks(d){
 
 function saveNote(){
   const note = document.getElementById('stock-notes').value;
-  if(currentTicker) localStorage.setItem('note_' + currentTicker, note);
+  if(currentTicker) {localStorage.setItem('note_' + currentTicker, note);window.MarketIntelBackup?.schedule();}
 }
 
 function addToHistory(ticker){
@@ -3689,7 +3694,7 @@ function fichaQuick(t) {
 
 function saveFichaNote() {
   const note = document.getElementById('ficha-notes').value;
-  if(fichaCurrentTicker) localStorage.setItem('ficha_note_'+fichaCurrentTicker, note);
+  if(fichaCurrentTicker) {localStorage.setItem('ficha_note_'+fichaCurrentTicker, note);window.MarketIntelBackup?.schedule();}
 }
 
 function fmtBigFicha(v) {
@@ -4225,21 +4230,29 @@ function hmRenderBox(ticker){
   const pctTxt=pct!=null?(pct>=0?'+':'')+pct.toFixed(2)+'%':'···';
   const pctColor=pct==null?'rgba(255,255,255,0.35)':pct>=0?'#9aff9a':'#ffa0a0';
   const priceStr=price?'$'+(price>=100?price.toFixed(0):price.toFixed(2)):'';
-  return `<div class="hm-box" style="background:${bg};width:${w}px;height:${h}px;"
-    onclick="go('screener');document.getElementById('ticker-input').value='${ticker}';fetchStock();"
-    title="${ticker}${priceStr?' · '+priceStr:''}${pct!=null?' · '+(pct>=0?'+':'')+pct.toFixed(2)+'%':''}">
-    <div class="hm-ticker">${ticker}</div><div class="hm-pct" style="color:${pctColor}">${pctTxt}</div>
-    ${priceStr?`<div class="hm-price">${priceStr}</div>`:''}
-  </div>`;
+  const box=document.createElement('div');box.className='hm-box';
+  box.style.cssText=`background:${bg};width:${w}px;height:${h}px;`;
+  box.title=ticker+(priceStr?' · '+priceStr:'')+(pct!=null?' · '+pctTxt:'');
+  box.addEventListener('click',()=>{go('screener');document.getElementById('ticker-input').value=ticker;fetchStock();});
+  box.innerHTML='<div class="hm-ticker"></div><div class="hm-pct"></div>';
+  box.querySelector('.hm-ticker').textContent=ticker;
+  const change=box.querySelector('.hm-pct');change.textContent=pctTxt;change.style.color=pctColor;
+  if(priceStr){const priceLabel=document.createElement('div');priceLabel.className='hm-price';priceLabel.textContent=priceStr;box.appendChild(priceLabel);}
+  return box;
 }
 function hmRenderAll(){
   const container=document.getElementById('hm-main');if(!container)return;
-  let html='';
+  const fragment=document.createDocumentFragment();
   for(const [sector,tickers] of Object.entries(hmCustom.sectors)){
     if(!tickers||!tickers.length) continue;
-    html+=`<div class="hm-sector-group"><div class="hm-sector-header"><span>${sector}</span><span style="font-size:9px;">${tickers.length} valores</span></div><div class="hm-sector-boxes">${tickers.map(t=>hmRenderBox(t)).join('')}</div></div>`;
+    const group=document.createElement('div');group.className='hm-sector-group';
+    group.innerHTML='<div class="hm-sector-header"><span></span><span style="font-size:9px;"></span></div><div class="hm-sector-boxes"></div>';
+    const labels=group.querySelectorAll('.hm-sector-header span');labels[0].textContent=sector;labels[1].textContent=tickers.length+' valores';
+    const boxes=group.querySelector('.hm-sector-boxes');tickers.forEach(t=>boxes.appendChild(hmRenderBox(t)));
+    fragment.appendChild(group);
   }
-  container.innerHTML=html||'<div style="color:var(--muted);text-align:center;padding:3rem;font-family:\'IBM Plex Mono\',monospace;font-size:11px;">Agrega grupos y tickers usando los controles superiores.</div>';
+  container.replaceChildren(fragment);
+  if(!container.children.length)container.innerHTML='<div style="color:var(--muted);text-align:center;padding:3rem;font-family:\'IBM Plex Mono\',monospace;font-size:11px;">Agrega grupos y tickers usando los controles superiores.</div>';
 }
 async function hmLoadCustomData(){
   const allTickers=[...new Set(Object.values(hmCustom.sectors).flat())];
@@ -4257,31 +4270,40 @@ async function hmLoadCustomData(){
 function updateHmStatus(msg){const el=document.getElementById('hm-status');if(el)el.textContent=msg;}
 function renderCustomBuilder(){
   const el=document.getElementById('hm-groups-container');if(!el)return;
-  let html='';
+  const fragment=document.createDocumentFragment();let groupIndex=0;
   for(const [grp,tickers] of Object.entries(hmCustom.sectors)){
-    const safeGrp=grp.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const inputId='hmi_'+grp.replace(/[^a-zA-Z0-9]/g,'_');
-    html+=`<div class="hm-custom-group" style="margin-bottom:8px;">
+    const inputId='hmi_'+groupIndex++;
+    const group=document.createElement('div');group.className='hm-custom-group';group.style.marginBottom='8px';
+    group.innerHTML=`
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem;">
-        <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--white);font-size:0.9rem;">${grp}</span>
-        <button onclick="hmRemoveGroup('${safeGrp}')" style="background:transparent;border:1px solid rgba(255,77,109,0.3);border-radius:4px;padding:2px 8px;color:#ff8099;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;">× Eliminar</button>
+        <span data-group-name style="font-family:'Syne',sans-serif;font-weight:700;color:var(--white);font-size:0.9rem;"></span>
+        <button type="button" data-remove-group style="background:transparent;border:1px solid rgba(255,77,109,0.3);border-radius:4px;padding:2px 8px;color:#ff8099;font-family:'IBM Plex Mono',monospace;font-size:10px;cursor:pointer;">× Eliminar</button>
       </div>
       <div style="display:flex;gap:6px;margin-bottom:0.6rem;flex-wrap:wrap;">
-        <input id="${inputId}" placeholder="Ticker (ej: AAPL)" style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:5px 10px;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;width:130px;" onkeydown="if(event.key==='Enter')hmAddTicker('${safeGrp}','${inputId}')">
-        <button onclick="hmAddTicker('${safeGrp}','${inputId}')" style="background:var(--accent);border:none;border-radius:5px;padding:5px 12px;color:#000;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;">+</button>
+        <input placeholder="Ticker (ej: AAPL)" style="background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:5px 10px;color:var(--white);font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;width:130px;">
+        <button type="button" data-add-ticker style="background:var(--accent);border:none;border-radius:5px;padding:5px 12px;color:#000;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;cursor:pointer;">+</button>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;">
-        ${tickers.map(t=>`<span style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text);display:inline-flex;align-items:center;gap:5px;">${t}<button onclick="hmRemoveTicker('${safeGrp}','${t}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0;line-height:1;">×</button></span>`).join('')}
-        ${!tickers.length?'<span style="color:var(--muted);font-size:11px;">Agrega tickers arriba</span>':''}
-      </div>
-    </div>`;
+      <div data-group-tickers style="display:flex;flex-wrap:wrap;gap:5px;"></div>`;
+    group.querySelector('[data-group-name]').textContent=grp;
+    group.querySelector('[data-remove-group]').addEventListener('click',()=>hmRemoveGroup(grp));
+    const input=group.querySelector('input');input.id=inputId;
+    input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();hmAddTicker(grp,inputId);}});
+    group.querySelector('[data-add-ticker]').addEventListener('click',()=>hmAddTicker(grp,inputId));
+    const tickerList=group.querySelector('[data-group-tickers]');
+    tickers.forEach(t=>{
+      const label=document.createElement('span');label.style.cssText="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text);display:inline-flex;align-items:center;gap:5px;";label.textContent=t;
+      const remove=document.createElement('button');remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','Eliminar '+t);remove.style.cssText='background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0;line-height:1;';
+      remove.addEventListener('click',()=>hmRemoveTicker(grp,t));label.appendChild(remove);tickerList.appendChild(label);
+    });
+    if(!tickers.length)tickerList.innerHTML='<span style="color:var(--muted);font-size:11px;">Agrega tickers arriba</span>';
+    fragment.appendChild(group);
   }
-  el.innerHTML=html;hmRenderAll();
+  el.replaceChildren(fragment);hmRenderAll();
 }
-function hmAddGroup(){const input=document.getElementById('hm-new-group-input');const name=input.value.trim();if(!name||hmCustom.sectors[name])return;hmCustom.sectors[name]=[];localStorage.setItem('hm_custom',JSON.stringify(hmCustom));input.value='';renderCustomBuilder();}
-function hmRemoveGroup(name){delete hmCustom.sectors[name];localStorage.setItem('hm_custom',JSON.stringify(hmCustom));renderCustomBuilder();}
-function hmAddTicker(group,inputId){const input=document.getElementById(inputId);if(!input)return;const ticker=input.value.trim().toUpperCase();if(!ticker)return;if(!hmCustom.sectors[group])hmCustom.sectors[group]=[];if(!hmCustom.sectors[group].includes(ticker))hmCustom.sectors[group].push(ticker);localStorage.setItem('hm_custom',JSON.stringify(hmCustom));input.value='';renderCustomBuilder();}
-function hmRemoveTicker(group,ticker){if(!hmCustom.sectors[group])return;hmCustom.sectors[group]=hmCustom.sectors[group].filter(t=>t!==ticker);delete hmData[ticker];localStorage.setItem('hm_custom',JSON.stringify(hmCustom));renderCustomBuilder();}
+function hmAddGroup(){const input=document.getElementById('hm-new-group-input');const name=input.value.trim();if(!name||hmCustom.sectors[name])return;hmCustom.sectors[name]=[];localStorage.setItem('hm_custom',JSON.stringify(hmCustom));window.MarketIntelBackup?.schedule();input.value='';renderCustomBuilder();}
+function hmRemoveGroup(name){delete hmCustom.sectors[name];localStorage.setItem('hm_custom',JSON.stringify(hmCustom));window.MarketIntelBackup?.schedule();renderCustomBuilder();}
+function hmAddTicker(group,inputId){const input=document.getElementById(inputId);if(!input)return;const ticker=input.value.trim().toUpperCase();if(!ticker)return;if(!hmCustom.sectors[group])hmCustom.sectors[group]=[];if(!hmCustom.sectors[group].includes(ticker))hmCustom.sectors[group].push(ticker);localStorage.setItem('hm_custom',JSON.stringify(hmCustom));window.MarketIntelBackup?.schedule();input.value='';renderCustomBuilder();}
+function hmRemoveTicker(group,ticker){if(!hmCustom.sectors[group])return;hmCustom.sectors[group]=hmCustom.sectors[group].filter(t=>t!==ticker);delete hmData[ticker];localStorage.setItem('hm_custom',JSON.stringify(hmCustom));window.MarketIntelBackup?.schedule();renderCustomBuilder();}
 
 
 
@@ -5114,9 +5136,16 @@ async function pfRequestInsight(){
 
 
 </script>
-<script src="/static/marketintel-reliability.js?v=6.4"></script>
-<script src="/static/marketintel-v2.js?v=6.4"></script>
-<script src="/static/portfolio-core.js"></script>
-<script src="/static/portfolio-v3.js?v=6.4"></script>
+<script src="/static/backup-browser-store.js?v=6.4.1"></script>
+<script src="/static/signal-browser-store.js?v=6.4.3"></script>
+<script src="/static/marketintel-reliability.js?v=6.4.3"></script>
+<script src="/static/marketintel-v2.js?v=6.4.4"></script>
+<script src="/static/portfolio-core.js?v=6.4.2"></script>
+<script src="/static/portfolio-v3.js?v=6.4.4"></script>
+<script src="/static/marketintel-accessibility.js?v=6.4.2"></script>
+<script src="/static/sync-core.js?v=6.4.4"></script>
+<script src="/static/sync-refresh.js?v=6.4.4"></script>
+<script src="/static/sync-engine.js?v=6.4.4"></script>
+<script src="/static/sync-ui.js?v=6.4.4"></script>
 </body>
 </html>

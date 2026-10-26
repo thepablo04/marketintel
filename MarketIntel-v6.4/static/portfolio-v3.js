@@ -269,6 +269,7 @@
     const type = el('pf-in-operation').value;
     const input = {
       id: (window.crypto && crypto.randomUUID) ? 'tx_' + crypto.randomUUID() : 'tx_' + Date.now(),
+      sequence: pfTransactions.reduce(function (max, tx) { return Math.max(max, tx.sequence || 0); }, 0) + 1,
       date: el('pf-in-date').value + 'T12:00:00',
       type,
       ticker: el('pf-in-ticker').value.trim().toUpperCase(),
@@ -820,6 +821,18 @@
   window.pfExportCsv = exportCsv;
   window.pfExportAccount = exportAccount;
   window.pfImportAccount = importAccount;
+  // Synchronization replaces the stored ledger. Update the live references
+  // synchronously so an outstanding quote request cannot save an older account.
+  window.pfReloadFromStorage = function () {
+    pfPortfolios = JSON.parse(localStorage.getItem('pf_portfolios'));
+    if (!Array.isArray(pfPortfolios) || !pfPortfolios.length) throw new Error('Falta una cuenta del portafolio.');
+    pfActiveId = localStorage.getItem('pf_active_id');
+    if (!pfPortfolios.some(account => account.id === pfActiveId)) pfActiveId = pfPortfolios[0].id;
+    historyCache.clear();
+    syncAccount();
+    renderAll();
+    renderSelectorMenu();
+  };
   window.mpBuildPortfolioSeries = function (days, portfolioId) {
     return buildAccountSeries(portfolioId, days, mpCustomRange);
   };

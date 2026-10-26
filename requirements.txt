@@ -1,0 +1,11 @@
+# Vercel's Python dependency parser needs the packages listed at project root.
+# Keep these identical to MarketIntel-v6.4/requirements.txt; the build checks it.
+flask>=3.0,<4
+flask-cors>=4,<7
+yfinance>=0.2.40,<2
+pandas>=2.2,<4
+requests>=2.31,<3
+python-dotenv>=1,<2
+exchange-calendars>=4.5,<5
+tzdata>=2025.1
+gunicorn>=22,<24

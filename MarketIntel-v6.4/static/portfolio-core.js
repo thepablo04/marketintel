@@ -78,6 +78,7 @@
       total: round(shares * price, 2),
       positionType,
       note: String((tx && tx.note) || '').trim(),
+      sequence: Math.max(0, Math.floor(number(tx && tx.sequence))),
       schemaVersion: 3
     };
   }
@@ -87,7 +88,9 @@
       .map(normalizeTransaction)
       .sort(function (a, b) {
         const byDate = new Date(a.date) - new Date(b.date);
-        return byDate || a.id.localeCompare(b.id);
+        // Trades entered on the same day share a timestamp. Preserve their
+        // entry order; UUID order can put a sale before its purchase.
+        return byDate || a.sequence - b.sequence || a.id.localeCompare(b.id);
       });
   }
 

@@ -81,7 +81,7 @@ function openDrawer(){$('#mi-drawer').hidden=false}function closeDrawer(){var d=
 function command(){
  document.body.insertAdjacentHTML('beforeend','<div class="mi-command-bg" id="mi-command" hidden><div class="mi-command"><div class="mi-command-input">'+ico('search',19)+'<input id="mi-command-input" placeholder="Herramienta o ticker..."><button class="mi-icon" data-close-command>'+ico('x',17)+'</button></div><div class="mi-command-results" id="mi-results"></div></div></div>');
  $('#mi-command-input').oninput=renderCommand;$('[data-close-command]').onclick=closeCommand;$('#mi-command').onclick=e=>{if(e.target===e.currentTarget)closeCommand()};
- document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openCommand()}if(e.altKey&&e.key.toLowerCase()==='c'){e.preventDefault();toggleDensity()}if(e.shiftKey&&e.key.toLowerCase()==='p'){e.preventDefault();togglePresentation()}if(e.key==='Escape'){closeCommand();closeDrawer();closePop();closeTopTools();exitFocus();closeComparison();closeColumns();closeOnboarding();if(document.body.classList.contains('mi-present'))togglePresentation(false)}});
+ document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openCommand()}if(e.altKey&&e.key.toLowerCase()==='c'){e.preventDefault();toggleDensity()}if(e.shiftKey&&e.key.toLowerCase()==='p'&&!e.target.closest('input,textarea,select,[contenteditable]:not([contenteditable="false"])')){e.preventDefault();togglePresentation()}if(e.key==='Escape'){closeCommand();closeDrawer();closePop();closeTopTools();exitFocus();closeComparison();closeColumns();closeOnboarding();if(document.body.classList.contains('mi-present'))togglePresentation(false)}});
  renderCommand();
 }
 function openCommand(){$('#mi-command').hidden=false;$('#mi-command-input').value='';renderCommand();setTimeout(()=>$('#mi-command-input').focus(),20)}function closeCommand(){var x=$('#mi-command');if(x)x.hidden=true}
@@ -189,6 +189,7 @@ async function loadSentiment(quotes,force){
  try{
   var insight=await api('/market-sentiment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({force:!!force})},90000,0);
   if(!insight||!insight.intraday)throw Error('Respuesta incompleta del pulso.');
+  insight=await window.MarketIntelPulse.prepare(insight);
   renderPulse({},insight);
  }catch(e){
   el.innerHTML='<div class="mi-error"><h3>Sin lectura actual</h3><p>'+esc(e.message)+'</p><p>La fuente no respondió. Reintentaremos automáticamente.</p><button class="mi-btn" data-pulse-retry>Reintentar</button></div>';
@@ -226,5 +227,6 @@ function visualEnhancements(){chartTheme();registerExtremaPlugin();enhanceTables
 function enhanceGo(){var old=window.go;if(typeof old!=='function')return;window.go=function(id){old(id);var c=$('#mi-current');if(c)c.textContent=names[id]||id;$$('.mi-mobile [data-target]').forEach(b=>b.classList.toggle('active',b.dataset.target===id));if(id==='home'&&!busy)refresh(false)}}
 function refreshPulseAndPrices(){var h=document.getElementById('sec-home');if(!document.hidden&&h&&h.classList.contains('active'))return Promise.allSettled([loadMarket(),loadSentiment({},false)])}
 function boot(){sidebar();shell();home();mobile();command();pop();visualEnhancements();enhanceGo();renderPulse({});refresh(false);onboarding();if(sentimentTimer)clearInterval(sentimentTimer);sentimentTimer=setInterval(refreshPulseAndPrices,60000);window.addEventListener('online',()=>refresh(false));window.addEventListener('offline',()=>{$('#mi-offline').classList.add('show');$('#mi-dot').className='mi-dot off';$('#mi-pulse').innerHTML='<div class="mi-error"><h3>Sin conexión</h3><p>La lectura anterior no se considera vigente. Se reintentará al recuperar internet.</p></div>'});document.addEventListener('visibilitychange',refreshPulseAndPrices)}
+document.addEventListener('marketintel-sync-refreshed',()=>{if($('#mi-portfolio'))loadPortfolio().catch(()=>{})});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();

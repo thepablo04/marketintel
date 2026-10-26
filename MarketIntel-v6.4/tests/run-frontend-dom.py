@@ -1,4 +1,4 @@
-"""Optional DOM integration test: requires Node and development dependency jsdom.
+"""Optional DOM integration test: requires Node, jsdom and fake-indexeddb.
 
 Uses a temporary database and fixture prices, never the user's portfolio.
 This checks JavaScript behavior, not browser layout or chart rendering.
@@ -35,8 +35,12 @@ def main():
                     time.sleep(.25)
             else:
                 raise RuntimeError('El servidor de prueba no respondió.')
-            return subprocess.run(['node', 'tests/frontend-dom.cjs'], cwd=root,
-                                  env=env, timeout=60).returncode
+            for mode in ('0', '1'):
+                result = subprocess.run(['node', 'tests/frontend-dom.cjs'], cwd=root,
+                                        env=dict(env, MARKETINTEL_TEST_WEB=mode), timeout=60)
+                if result.returncode:
+                    return result.returncode
+            return 0
         finally:
             server.terminate()
             server.wait(timeout=10)

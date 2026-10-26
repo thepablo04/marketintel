@@ -10,12 +10,14 @@ import time
 import secrets
 import threading
 import hashlib
+import tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
 from datetime import datetime, timezone
 
 from marketintel_storage import LocalStore
 from marketintel_pulse import PulseService, weighted, market_session
+from marketintel_sync import create_sync_blueprint
 
 try:
     from zoneinfo import ZoneInfo
@@ -55,13 +57,19 @@ from marketintel_data import (
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 8_500_000
-APP_VERSION = '6.4'
+APP_VERSION = '6.4.4'
+IS_VERCEL = os.environ.get('VERCEL') == '1'
+if IS_VERCEL:
+    # Vercel's deployed application is read-only. These provider caches are
+    # disposable; personal backups and observations stay in the browser.
+    yf.set_tz_cache_location(str(Path(tempfile.gettempdir()) / 'marketintel' / 'yfinance'))
 INSTALL_ID = hashlib.sha256(str(Path(__file__).resolve().parent).encode()).hexdigest()[:16]
 LOCAL_TOKEN = secrets.token_urlsafe(32)
-local_store = LocalStore()
+local_store = None if IS_VERCEL else LocalStore()
 _local_origins = 'http://localhost:3000,http://localhost:5000,http://localhost:5050,http://localhost:5500,http://127.0.0.1:3000,http://127.0.0.1:5000,http://127.0.0.1:5050,http://127.0.0.1:5500'
 ALLOWED_ORIGINS = [x.strip() for x in os.environ.get('MARKETINTEL_ALLOWED_ORIGINS', _local_origins).split(',') if x.strip()]
 CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}})
+app.register_blueprint(create_sync_blueprint())
 TICKER_RE = re.compile(r'^[A-Z0-9.^=-]{1,15}$')
 CACHE_TTL = int(os.environ.get('MARKETINTEL_CACHE_TTL', '120'))
 FMP_API_KEY = os.environ.get('FMP_API_KEY', '').strip()
@@ -189,6 +197,8 @@ def response_headers(response):
 def protect_local_storage():
     if not flask_request.path.startswith(('/local-', '/signal-history')):
         return None
+    if IS_VERCEL:
+        return jsonify({'error': 'En la versión web, los respaldos y el seguimiento se guardan en este navegador.'}), 403
     hostname = urlsplit(flask_request.host_url).hostname
     if flask_request.remote_addr not in ('127.0.0.1', '::1') or hostname not in ('localhost', '127.0.0.1', '::1'):
         return jsonify({'error': 'Los respaldos solo son accesibles desde esta PC.'}), 403

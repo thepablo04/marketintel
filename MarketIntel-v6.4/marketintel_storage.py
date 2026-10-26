@@ -13,7 +13,10 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 
 MODEL_VERSION = 'intraday-v6.1'
-ALLOWED_KEY = re.compile(r'^(pf_[\w-]+|watchlist|search_history|stock_notes[\w-]*|ticker_bar[\w-]*|mi_[\w-]+)$')
+ALLOWED_KEY = re.compile(
+    r'^(pf_[\w-]+|watchlist|search_history|stock_notes[\w-]*|ticker_bar[\w-]*|mi_[\w-]+'
+    r'|(?:ficha_)?note_[A-Z0-9.^=-]{1,15}|hm_custom)$'
+)
 SECRET_KEY = re.compile(r'(apikey|api_key|secret|token|password|backup_profile)', re.I)
 
 

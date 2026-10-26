@@ -351,8 +351,11 @@ class FinancialDataTests(unittest.TestCase):
             with self.assertRaises(ValueError):fetch_ism_snapshot(object())
 
     def test_public_bls_and_ism_do_not_require_fred_key(self):
-        cpi={'source':'BLS','display_value':2.0,'date':'2026-08-01'}
-        pmi={'source':'ISM','display_value':51.0,'date':'2026-08-01'}
+        # This exercises keyless access, not freshness. Keep the reference
+        # month recent so the fixture does not expire as calendar time passes.
+        recent_month=marketintel_data._shift_month(datetime.now(timezone.utc).date().isoformat(), -1)
+        cpi={'source':'BLS','display_value':2.0,'date':recent_month}
+        pmi={'source':'ISM','display_value':51.0,'date':recent_month}
         with patch.object(marketintel_data,'fetch_bls_cpi_snapshot',return_value=cpi), patch.object(marketintel_data,'fetch_ism_snapshot',return_value=pmi):
             result=fetch_fred_snapshot(object(),'')
         self.assertEqual(result['series']['cpi']['source'],'BLS')

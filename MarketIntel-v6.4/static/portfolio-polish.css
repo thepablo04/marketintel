@@ -1,0 +1,342 @@
+/* Portfolio presentation only. Account state, calculations and visibility remain
+   controlled by portfolio-v3.js. Screen rules leave the print layout intact. */
+@media screen {
+  .pf3-page {
+    --pf3-panel: var(--bg3);
+    --pf3-panel-2: var(--bg2);
+    --pf3-line: var(--border);
+    --pf3-soft: var(--ui-soft, rgba(148, 163, 184, .06));
+    min-width: 0;
+  }
+
+  /* Account header and tools */
+  .pf3-header { align-items: flex-start; gap: 24px; margin-bottom: 26px; }
+  .pf3-header > div { min-width: 0; }
+  .pf3-header .sec-title { margin: 7px 0 12px; }
+  .pf3-account-meta { align-items: flex-start; font-size: 11px; line-height: 1.65; }
+  .pf3-live-dot { flex: 0 0 7px; margin-top: 5px; }
+  .pf3-toolbar { gap: 8px; max-width: 650px; }
+  .pf3-btn, .pf3-btn-primary {
+    min-height: var(--ui-control, 44px);
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .pf3-btn { color: var(--text); }
+  .pf3-btn-primary { box-shadow: 0 4px 16px rgba(34, 211, 238, .1); }
+  .pf3-import-btn { justify-content: center; }
+  .pf3-account-btn { min-width: 150px; gap: 14px; text-align: left; }
+  #pf-selector-label { overflow-wrap: anywhere; }
+  .pf3-selector-menu {
+    width: min(320px, calc(100vw - 40px));
+    max-height: min(440px, 60vh);
+    overflow: auto;
+    border-radius: 12px;
+  }
+  .pf3-selector-row { grid-template-columns: minmax(0, 1fr) 44px 44px; }
+  .pf3-selector-main { width: 100%; min-height: 64px; height: auto; padding: 12px; }
+  .pf3-selector-main strong { font-size: 12px; overflow-wrap: anywhere; }
+  .pf3-selector-main small { font-size: 10px; }
+  .pf3-selector-edit, .pf3-selector-delete { width: 44px; height: 44px; font-size: 14px; }
+  .pf3-selector-new { min-height: 48px; height: auto; font-size: 11px; }
+
+  /* Financial summary: clear hierarchy without hiding secondary metrics. */
+  .pf3-kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-bottom: 18px;
+    border-radius: var(--ui-radius, 16px);
+    box-shadow: var(--ui-shadow, 0 12px 34px rgba(0, 0, 0, .12));
+  }
+  .pf3-kpi {
+    min-height: 125px;
+    padding: 20px;
+    border-right: 1px solid var(--pf3-line);
+    border-bottom: 1px solid var(--pf3-line);
+  }
+  .pf3-kpi:nth-of-type(3n) { border-right: 0; }
+  .pf3-kpi:nth-of-type(n + 4) { border-bottom: 0; }
+  .pf3-kpi > span {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: .075em;
+    line-height: 1.6;
+  }
+  .pf3-kpi > strong {
+    margin: 10px 0 6px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(21px, 1.7vw, 27px);
+    line-height: 1.2;
+    letter-spacing: -.035em;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .pf3-kpi > small { font-size: 11px; line-height: 1.55; white-space: normal; }
+  .pf3-kpi-main { background: linear-gradient(135deg, rgba(34, 211, 238, .11), transparent 85%); }
+  .pf3-kpi-main > span { color: var(--accent); }
+  .pf3-kpi-main > strong { font-size: clamp(26px, 2.2vw, 34px); }
+
+  /* Charts and account details */
+  .pf3-dashboard { grid-template-columns: minmax(0, 1.9fr) minmax(270px, .85fr); gap: 18px; margin-bottom: 18px; }
+  .pf3-panel { border-radius: var(--ui-radius, 16px); box-shadow: var(--ui-shadow, 0 12px 34px rgba(0, 0, 0, .12)); }
+  .pf3-performance, .pf3-allocation { padding: 22px; }
+  .pf3-panel-head { flex-wrap: wrap; gap: 16px; }
+  .pf3-panel-head h3 { margin-top: 7px; font-size: 18px; line-height: 1.35; }
+  .pf3-overline { color: var(--muted); font-size: 10px; letter-spacing: .1em; line-height: 1.6; }
+  .pf3-chip { padding: 6px 9px; font-size: 10px; white-space: nowrap; }
+  .pf3-range { max-width: 100%; padding: 3px; border-radius: 10px; }
+  .pf3-range .hist-tab, .pf3-refresh { min-width: 37px; min-height: 40px; height: auto; padding: 7px; font-size: 10px; }
+  .pf3-refresh { font-size: 18px; }
+  .pf3-custom-range { height: auto; margin: 16px 0 8px; gap: 8px; flex-wrap: wrap; }
+  .pf3-custom-range input, .pf3-custom-range button,
+  .pf3-benchmark-tools input, .pf3-benchmark-tools select, .pf3-benchmark-tools button,
+  .pf3-transaction-tools select {
+    min-height: var(--ui-control, 44px);
+    height: auto;
+    min-width: 0;
+    max-width: 100%;
+    padding: 9px 11px;
+    font-size: 11px;
+    border-radius: 9px;
+    color: var(--text);
+  }
+  .pf3-chart-shell { height: 260px; margin: 8px 0; }
+  .pf3-chart-shell canvas { height: 260px !important; }
+  .pf3-chart-empty { padding: 24px; font-size: 12px; line-height: 1.7; text-align: center; }
+  .pf3-period-strip > div { padding: 14px 12px 3px; gap: 8px; }
+  .pf3-period-strip span, .pf3-account-strip span { color: var(--muted); font-size: 10px; line-height: 1.6; }
+  .pf3-period-strip strong, .pf3-account-strip strong { font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+  .pf3-donut-wrap { margin-top: 24px; margin-bottom: 18px; }
+  .pf3-donut-center strong { max-width: 145px; font-family: 'Inter', system-ui, sans-serif; font-variant-numeric: tabular-nums; font-size: 19px; overflow-wrap: anywhere; text-align: center; }
+  .pf3-donut-center span { font-size: 10px; }
+  .pf3-allocation-list { gap: 3px; }
+  .pf3-allocation-row { min-height: 38px; gap: 10px; border-bottom: 1px solid var(--pf3-line); }
+  .pf3-allocation-row:last-child { border-bottom: 0; }
+  .pf3-allocation-row > i { width: 8px; height: 8px; }
+  .pf3-allocation-row > span { color: var(--text); font-size: 11px; }
+  .pf3-allocation-row > strong { font-size: 12px; }
+  .pf3-muted { font-size: 12px; line-height: 1.7; }
+  .pf3-account-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 36px; border-radius: 12px; }
+  .pf3-account-strip > div { min-height: 85px; padding: 16px 18px; border-right: 1px solid var(--pf3-line); border-bottom: 1px solid var(--pf3-line); }
+  .pf3-account-strip > div:nth-child(3n) { border-right: 0; }
+  .pf3-account-strip > div:nth-child(n + 4) { border-bottom: 0; }
+
+  /* Tables retain every column, total and user-selected column preference. */
+  .pf3-ledger-head { align-items: center; margin-bottom: 18px; }
+  .pf3-ledger-head h2 { margin-top: 7px; font-size: 24px; line-height: 1.35; }
+  .pf3-tabs { padding: 4px; border-radius: 11px; }
+  .pf3-tabs .pf-tab { min-height: 44px; height: auto; padding: 10px 16px; font-size: 11px; }
+  .pf3-table-panel { min-width: 0; margin-bottom: 22px; }
+  .pf3-table-scroll { max-width: 100%; border-radius: 12px; scrollbar-width: thin; scrollbar-color: var(--border2) var(--bg2); }
+  .pf3-table { min-width: 1140px !important; }
+  .pf3-table th { height: 48px; padding: 10px 14px !important; color: var(--muted) !important; font-size: 10px !important; letter-spacing: .04em; line-height: 1.5; }
+  .pf3-table td { height: 70px; padding: 10px 14px !important; font-size: 12px; line-height: 1.55; border-bottom-color: var(--pf3-line); }
+  .pf3-table tbody tr:hover { background: var(--pf3-soft); }
+  .pf3-table tfoot td { height: 56px !important; border-top: 1px solid var(--border2); }
+  .pf3-position-meta { gap: 5px; }
+  .pf3-position-meta strong { font-size: 13px; }
+  .pf3-position-meta small, .pf3-tx-note { font-size: 10px; line-height: 1.5; }
+  .pf3-allocation-bar { height: 5px; margin-top: 6px; }
+  .pf3-row-actions { gap: 6px; }
+  .pf3-row-actions button { min-height: 44px; height: auto; padding: 9px 11px; border-radius: 8px; font-size: 11px; }
+  .pf3-operation-badge { padding: 6px 9px; font-size: 10px; white-space: nowrap; }
+  .pf3-transaction-tools { min-height: 64px; padding: 10px 12px; gap: 12px; flex-wrap: wrap; }
+  .pf3-transaction-tools > span { font-size: 11px; }
+  .pf3-empty { min-height: 240px; padding: 28px 20px; gap: 4px; border-radius: var(--ui-radius, 16px); }
+  .pf3-empty strong { font-size: 18px; line-height: 1.45; }
+  .pf3-empty span { font-size: 13px; line-height: 1.7; }
+  .pf3-empty button { min-height: 44px; height: auto; padding: 10px 15px; font-size: 11px; }
+
+  .pf3-secondary { margin: 14px 0; border-radius: 12px; }
+  .pf3-secondary > summary { min-height: 64px; gap: 16px; padding: 16px 20px; font-size: 12px; line-height: 1.6; }
+  .pf3-secondary > summary:hover { background: var(--pf3-soft); }
+  .pf3-secondary-body { padding: 22px; }
+  .pf3-benchmark-tools { margin: 18px 0; flex-wrap: wrap; gap: 8px; }
+  .pf3-benchmark-values > div { min-width: 0; padding: 16px; gap: 8px; }
+  .pf3-benchmark-values span, .pf3-benchmark-values small { font-size: 11px; line-height: 1.55; }
+  .pf3-benchmark-values strong { font-size: 18px; overflow-wrap: anywhere; }
+  .pf3-insight-tabs { gap: 8px; flex-wrap: wrap; }
+  .pf3-insight-tabs button { min-height: 44px; height: auto; padding: 10px 14px; font-size: 11px; }
+  .pf3-page #pf-insight-body { margin: 18px 0; font-size: 13px; }
+
+  /* Operation/account modals: comfortably sized inputs and bounded scrolling. */
+  .pf3-modal-overlay { padding: 24px; }
+  .pf3-modal {
+    width: min(640px, 100%);
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+    padding: 28px;
+    border-radius: 20px;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .pf3-modal-small { width: min(460px, 100%); }
+  .pf3-modal-head { gap: 18px; margin-bottom: 24px; }
+  .pf3-modal-head h2, .pf3-modal-title { font-size: 23px; line-height: 1.4; }
+  .pf3-modal-head > button { flex: 0 0 44px; width: 44px; height: 44px; border-radius: 10px; }
+  .pf3-form-grid { gap: 18px 16px; }
+  .pf3-modal .calc-field { min-width: 0; }
+  .pf3-modal .calc-field label { margin-bottom: 8px; color: var(--muted); font-size: 11px; line-height: 1.5; letter-spacing: .03em; }
+  .pf3-modal input:not([type="hidden"]), .pf3-modal select {
+    min-width: 0;
+    min-height: 48px;
+    max-width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    background: var(--bg2);
+    color: var(--text);
+    font-size: 14px;
+  }
+  .pf3-form-error, .pf3-operation-preview { margin-top: 18px; padding: 13px 15px; font-size: 12px; line-height: 1.7; border-radius: 10px; }
+  .pf3-modal-actions { margin-top: 24px; padding-top: 18px; gap: 10px; border-top: 1px solid var(--border); }
+  .pf3-account-form { gap: 18px; margin: 22px 0; }
+  /* Hidden fields must stay hidden even when other form styling changes. */
+  .pf3-modal [hidden], .pf3-page [hidden] { display: none !important; }
+
+  /* Complete backups and restore preview share the portfolio visual language. */
+  .mi-backup-tools { gap: 10px; margin-top: 26px; padding: 20px; background: var(--bg3); border-radius: var(--ui-radius, 16px); }
+  .mi-backup-tools span { flex: 1 1 100%; min-width: 0; font-size: 12px; line-height: 1.7; }
+  .mi-backup-tools .mi-btn, .mi-reliability-dialog .mi-btn { min-height: 44px; height: auto; padding: 10px 14px; border-radius: 10px; font-size: 11px; line-height: 1.5; }
+  .mi-reliability-dialog {
+    width: min(760px, calc(100% - 40px));
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+    padding: 28px;
+    border-radius: 20px;
+    background: var(--bg3);
+    color: var(--text);
+    box-shadow: 0 30px 100px rgba(0, 0, 0, .4);
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+  .mi-reliability-dialog::backdrop { background: rgba(2, 6, 12, .78); backdrop-filter: blur(6px); }
+  .mi-reliability-dialog h2 { margin: 12px 0 14px; color: var(--white); font-size: 24px; line-height: 1.35; }
+  .mi-reliability-dialog p, .mi-backup-changes { font-size: 13px; line-height: 1.8; }
+  .mi-reliability-dialog > [data-close] { display: block; margin-left: auto; }
+  .mi-reliability-dialog .mi-data-scroll { margin: 20px 0; max-height: 360px; border: 1px solid var(--border); border-radius: 10px; }
+  .mi-reliability-dialog .mi-data-scroll table { border-collapse: collapse; font-size: 12px; }
+  .mi-reliability-dialog .mi-data-scroll th, .mi-reliability-dialog .mi-data-scroll td { padding: 13px 15px; line-height: 1.5; }
+  .mi-reliability-dialog .mi-data-scroll thead { background: var(--bg2); color: var(--muted); }
+  .mi-reliability-dialog .mi-data-scroll td { font-variant-numeric: tabular-nums; }
+  .mi-reliability-dialog summary { min-height: 44px; padding: 12px 0; font-size: 12px; line-height: 1.6; }
+  .mi-backup-row { align-items: center; gap: 10px; padding: 16px 0; }
+  .mi-backup-row span { min-width: 0; flex: 1 1 240px; font-size: 12px; line-height: 1.7; }
+  .mi-backup-actions { padding-top: 18px; border-top: 1px solid var(--border); }
+  .mi-reliability-dialog [data-confirm] { background: var(--accent); border-color: var(--accent); color: #03232b; font-weight: 700; }
+
+  html.light-theme .pf3-page { --pf3-panel: var(--bg3); --pf3-panel-2: var(--bg2); --pf3-line: var(--border); }
+  html.light-theme .pf3-kpi-main { background: linear-gradient(135deg, rgba(8, 145, 178, .09), transparent 85%); }
+  html.light-theme .pf3-kpi-main > span { color: #087b91; }
+  html.light-theme .pf3-operation-badge.buy,
+  html.light-theme .pf3-operation-badge.deposit,
+  html.light-theme .pf3-operation-badge.dividend { color: #08754c; }
+  html.light-theme .pf3-operation-badge.sell,
+  html.light-theme .pf3-operation-badge.withdrawal,
+  html.light-theme .pf3-operation-badge.fee { color: #b72c4d; }
+  html.light-theme .pf3-operation-badge.short { color: #6c46b5; }
+
+  body.mi-compact .pf3-header { margin-bottom: 18px; }
+  body.mi-compact .pf3-kpi { min-height: 106px; padding: 16px; }
+  body.mi-compact .pf3-performance, body.mi-compact .pf3-allocation,
+  body.mi-compact .pf3-secondary-body { padding: 16px; }
+  body.mi-compact .pf3-table td { height: 62px; }
+  body.mi-comfy .pf3-kpi { padding: 24px; }
+}
+
+@media screen and (min-width: 1700px) {
+  .pf3-kpis { grid-template-columns: 1.35fr repeat(5, minmax(0, 1fr)); }
+  .pf3-kpi { padding: 19px 16px; border-bottom: 0; }
+  .pf3-kpi:nth-of-type(3) { border-right: 1px solid var(--pf3-line); }
+  .pf3-kpi > strong { font-size: 23px; }
+  .pf3-kpi-main > strong { font-size: 30px; }
+  .pf3-account-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .pf3-account-strip > div { border-bottom: 0; }
+  .pf3-account-strip > div:nth-child(3) { border-right: 1px solid var(--pf3-line); }
+}
+
+@media screen and (max-width: 1200px) {
+  .pf3-header { flex-direction: column; }
+  .pf3-toolbar { justify-content: flex-start; max-width: none; }
+  .pf3-dashboard { grid-template-columns: minmax(0, 1fr); }
+  .pf3-allocation { min-height: 0; }
+  .pf3-donut-wrap { height: 185px; }
+}
+
+@media screen and (max-width: 800px) {
+  .pf3-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf3-kpi { min-height: 120px; padding: 17px; }
+  .pf3-kpi > strong { font-size: 21px; }
+  .pf3-kpi-main > strong { font-size: 26px; }
+  .pf3-account-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf3-account-strip > div { padding: 14px 16px; }
+  .pf3-toolbar { max-width: 100%; }
+  .pf3-selector-menu { left: 0; right: auto; }
+  .pf3-panel-head { flex-direction: row; }
+  .pf3-panel-head > div:first-child { min-width: 0; }
+  .pf3-panel-head > .pf3-range { flex-basis: 100%; }
+  .pf3-range .hist-tab, .pf3-refresh { min-height: 44px; }
+  .pf3-custom-range { overflow: visible; justify-content: flex-start; }
+  .pf3-chart-shell, .pf3-chart-shell canvas { height: 240px !important; }
+  .pf3-period-strip > div { padding: 14px 10px; }
+  .pf3-ledger-head { align-items: stretch; }
+  .pf3-ledger-head h2 { font-size: 22px; }
+  /* Horizontal scrolling keeps numeric comparisons, table totals and column
+     preferences available on narrow screens without widening the page. */
+  .pf3-table-scroll { overflow: auto; border: 1px solid var(--pf3-line); background: var(--pf3-panel); }
+  .pf3-table:not([hidden]) { display: table !important; min-width: 1140px !important; }
+  .pf3-table thead { display: table-header-group; }
+  .pf3-table tbody { display: table-row-group; }
+  .pf3-table tfoot { display: table-footer-group; }
+  .pf3-table tr { display: table-row !important; background: transparent; }
+  .pf3-table td:not([style*="display: none"]):not([style*="display:none"]) {
+    display: table-cell !important;
+    min-height: 0;
+    padding: 12px 14px !important;
+    vertical-align: middle;
+    white-space: nowrap !important;
+  }
+  .pf3-table td[style*="display: none"], .pf3-table td[style*="display:none"] { display: none !important; }
+  .pf3-table td::before { content: none; }
+  .pf3-row-actions { justify-content: flex-end; }
+  .pf3-benchmark-values { grid-template-columns: minmax(0, 1fr); }
+  .pf3-benchmark-tools > span { align-self: center; }
+}
+
+@media screen and (max-width: 480px) {
+  .pf3-performance, .pf3-allocation, .pf3-secondary-body { padding: 16px; }
+  .pf3-toolbar { gap: 8px; }
+  .pf3-toolbar .pf3-btn, .pf3-toolbar .pf3-btn-primary { padding: 10px 8px; }
+  .pf3-account-btn { min-width: 0; }
+  .pf3-kpi { padding: 15px 12px; }
+  .pf3-kpi > span { font-size: 10px; }
+  .pf3-kpi > strong { font-size: 20px; }
+  .pf3-kpi-main > strong { font-size: 24px; }
+  .pf3-custom-range { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .pf3-custom-range > input { width: 100%; padding: 9px 6px; font-size: 11px; }
+  .pf3-custom-range > button { grid-column: 1 / -1; }
+  .pf3-range .hist-tab { padding: 7px 5px; min-width: 0; }
+  .pf3-refresh { min-width: 36px; }
+  .pf3-secondary > summary { padding: 14px 16px; }
+  .pf3-modal-overlay { padding: 12px; }
+  .pf3-modal { padding: 20px; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); border-radius: 16px; }
+  .pf3-modal-head h2, .pf3-modal-title { font-size: 21px; }
+  .pf3-modal input:not([type="hidden"]), .pf3-modal select { font-size: 16px; }
+  .pf3-modal-actions { flex-wrap: wrap; }
+  .pf3-modal-actions > button { flex: 1 1 110px; }
+  .mi-backup-tools { padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .mi-backup-tools span { grid-column: 1 / -1; }
+  .mi-backup-tools .mi-btn { justify-content: center; padding: 10px 8px; }
+  .mi-reliability-dialog { width: calc(100% - 24px); padding: 20px; border-radius: 16px; }
+  .mi-reliability-dialog h2 { font-size: 22px; }
+  .mi-backup-row > span { flex-basis: 100%; }
+  .mi-backup-row > button { flex: 1 1 110px; }
+  .mi-backup-actions > button { flex: 1 1 140px; }
+  .mi-reliability-dialog .mi-data-scroll th, .mi-reliability-dialog .mi-data-scroll td { padding: 12px 10px; }
+}
+
+@media screen and (max-width: 360px) {
+  .pf3-kpi-main > strong { font-size: 20px; }
+}

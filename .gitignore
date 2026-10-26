@@ -1,0 +1,21 @@
+# Local secrets and runtime data never belong in the repository.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+__pycache__/
+*.py[cod]
+*.sqlite*
+*.db
+.venv/
+venv/
+node_modules/
+.vercel/
+
+# Vercel CLI generates these from the root requirements on local builds.
+/pyproject.toml
+/uv.lock
+.vercel
+.env*
