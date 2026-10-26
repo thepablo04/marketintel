@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'MarketIntel-v6.4'
 VERSION = '6.4.4'
 TARGET = ROOT / 'public' / 'descargas' / f'MarketIntel-{VERSION}.zip'
+REPAIR_TARGET = TARGET.with_name(f'Reparar-MarketIntel-{VERSION}.zip')
 TOP = {'index.html', 'requirements.txt', 'LEEME.md', 'VALIDACION-v6.md',
        'INICIAR.bat', 'CONFIGURAR_APIS.bat', 'abrir_marketintel.py',
        'configurar_apis.py', 'servidor.py', 'marketintel_data.py',
@@ -55,6 +56,31 @@ def main():
             assert archive.read(str(Path(SOURCE.name) / path.relative_to(SOURCE))) == path.read_bytes()
     print(f'Validated local package: {len(files) + 1} files, {TARGET.stat().st_size} bytes')
     print('SHA-256:', hashlib.sha256(TARGET.read_bytes()).hexdigest())
+    # A separate flat archive lets an incomplete Windows installation restore
+    # this required module without mixing folders or replacing private .env.
+    repair_module = SOURCE / 'marketintel_sync.py'
+    repair_instructions = '''Reparar MarketIntel 6.4.4: falta marketintel_sync.py
+
+1. Cierra la ventana negra de MarketIntel.
+2. Extrae este ZIP. Copia marketintel_sync.py a la carpeta de tu programa,
+   junto a servidor.py e INICIAR.bat. El archivo no va dentro de static.
+3. Ejecuta INICIAR.bat de esa carpeta.
+
+Conserva tus archivos .env. Este paquete no incluye claves ni datos de usuario.
+Si faltan otros archivos, descarga y extrae el paquete completo:
+https://marketintel-nu.vercel.app/descargas/MarketIntel-6.4.4.zip
+'''
+    with zipfile.ZipFile(REPAIR_TARGET, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        for name, data in [('marketintel_sync.py', repair_module.read_bytes()),
+                           ('LEER-REPARACION.txt', repair_instructions.encode('utf-8'))]:
+            info = zipfile.ZipInfo(name, (2026, 10, 26, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            archive.writestr(info, data)
+    with zipfile.ZipFile(REPAIR_TARGET) as archive:
+        assert archive.testzip() is None
+        assert archive.read('marketintel_sync.py') == repair_module.read_bytes()
+    print(f'Validated repair package: 2 files, {REPAIR_TARGET.stat().st_size} bytes')
 
 
 if __name__ == '__main__':

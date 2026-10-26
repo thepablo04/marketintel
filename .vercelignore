@@ -14,6 +14,7 @@
 **/tests/**
 **/*.zip
 !public/descargas/MarketIntel-6.4.4.zip
+!public/descargas/Reparar-MarketIntel-6.4.4.zip
 **/*.log
 pyproject.toml
 uv.lock
