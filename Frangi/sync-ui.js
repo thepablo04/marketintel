@@ -117,7 +117,7 @@
   }
   window.FrangiSyncOptions = {
     core:window.FrangiSyncCore, recovery:window.FrangiSyncRecovery,
-    fetch:location.protocol === 'file:' ? bridgeFetch() : undefined,
+    fetch:location.origin !== origin ? bridgeFetch() : undefined,
     backup: () => localStorage.setItem('frangi_sync_before_restore', JSON.stringify(window.FrangiSyncCore.capture(localStorage))),
     onApplied: snapshot => {
       trades = {};

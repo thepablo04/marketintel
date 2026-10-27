@@ -2,7 +2,6 @@
 const {chromium} = require('playwright');
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const fs = require('node:fs');
 const crypto = require('node:crypto');
 const html = path.join(__dirname,'../frangi.html');
 const bridge = path.join(__dirname,'../bridge.html');
@@ -11,14 +10,11 @@ let counter=0, offline=false;
 const local='http://localhost:5060/frangi.html';
 const web='https://marketintel-nu.vercel.app/frangi/index.html';
 const reply=(route,status,body,origin)=>route.fulfill({status,json:body,headers:{'Access-Control-Allow-Origin':origin||'*','Access-Control-Allow-Headers':'Authorization,Content-Type,X-Sync-If-Match,X-Sync-If-None-Match','Access-Control-Allow-Methods':'GET,PUT,OPTIONS','Cache-Control':'no-store'}});
-async function route(context,forceBridge=false) {
+async function route(context) {
   await context.route('**/*', async req=>{
     const request=req.request(),url=new URL(request.url());
     if(url.pathname==='/frangi/bridge.html') return req.fulfill({path:bridge,contentType:'text/html'});
-    if(url.pathname==='/frangi/index.html'||url.pathname==='/frangi.html') {
-      const document=fs.readFileSync(html,'utf8');
-      return req.fulfill({body:forceBridge?document.replace("location.protocol === 'file:' ? bridgeFetch() : undefined",'bridgeFetch()'):document,contentType:'text/html'});
-    }
+    if(url.pathname==='/frangi/index.html'||url.pathname==='/frangi.html') return req.fulfill({path:html,contentType:'text/html'});
     if(url.pathname==='/sync/data') {
       const origin=request.headers().origin;
       if(request.method()==='OPTIONS')return req.fulfill({status:204,headers:{'Access-Control-Allow-Origin':origin||'*','Access-Control-Allow-Headers':'Authorization,Content-Type,X-Sync-If-Match,X-Sync-If-None-Match','Access-Control-Allow-Methods':'GET,PUT,OPTIONS'}});
@@ -58,12 +54,13 @@ async function edit(page,date,result) {
    const localContext=await browser.newContext({viewport:{width:320,height:740}});
    const webContext=await browser.newContext({viewport:{width:1200,height:900}});
    await localContext.addInitScript(()=>{
+     if(location.hostname!=='localhost') return;
      const date=new Date();const key=`tpsl_calendar_trade_${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-05`;
      if(!localStorage.getItem('frangi_test_seed')) {localStorage.setItem('frangi_test_seed','1');localStorage.setItem(key,'TP');}
    });
    await route(localContext);await route(webContext);
    const first=await localContext.newPage(),second=await webContext.newPage();
-   first.on('pageerror',e=>errors.push(e.message));second.on('pageerror',e=>errors.push(e.message));
+   first.on('pageerror',e=>errors.push(e.stack));second.on('pageerror',e=>errors.push(e.stack));
    await first.goto(local);await second.goto(web);await ready(first);await ready(second);
    const date=await first.evaluate(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-05`});
    assert.equal(await first.locator('#tradeCount').innerText(),'1');
@@ -100,7 +97,7 @@ async function edit(page,date,result) {
    console.log('Frangi browser passed: old mark, encrypted link local/web, 3 then 5 trades in a day, offline independent additions, win rate, reload, 320px.');
    await localContext.close();await webContext.close();
    const bridgeContext=await browser.newContext();
-   await route(bridgeContext,true);
+   await route(bridgeContext);
    const bridged=await bridgeContext.newPage();
    bridged.on('pageerror',e=>errors.push(e.message));
    await bridged.goto(local);await ready(bridged);
