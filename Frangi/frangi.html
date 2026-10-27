@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendario TP/SL</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --border: #2a2e37;
+    --text: #e7e9ee;
+    --muted: #9aa0ac;
+    --tp: #1f9d55;
+    --tp-bg: rgba(31,157,85,0.18);
+    --sl: #d64545;
+    --sl-bg: rgba(214,69,69,0.18);
+    --accent: #4f8cff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+
+  .stats {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .stat {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 4px;
+    text-align: center;
+    min-width: 0;
+  }
+  .stat .num { font-size: 18px; font-weight: 700; }
+  .stat .lbl { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .stat.tp .num { color: var(--tp); }
+  .stat.sl .num { color: var(--sl); }
+  .stat.ratio .num { color: var(--accent); }
+  .stat.trades .num { color: var(--text); }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .nav button {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .nav button:hover { border-color: var(--accent); }
+  .nav .month-label { font-weight: 600; font-size: 15px; text-transform: capitalize; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .dow {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    padding-bottom: 4px;
+  }
+  .day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+  .day.disabled {
+    opacity: 0.25;
+    cursor: default;
+  }
+  .day.empty { visibility: hidden; }
+  .day.tp { background: var(--tp-bg); border-color: var(--tp); color: var(--tp); font-weight: 700; }
+  .day.sl { background: var(--sl-bg); border-color: var(--sl); color: var(--sl); font-weight: 700; }
+  .day.mixed { background: linear-gradient(135deg, var(--tp-bg) 50%, var(--sl-bg) 50%); border-color: var(--accent); color: var(--text); }
+  .day { flex-direction: column; gap: 1px; font: inherit; padding: 2px; min-width: 0; width: 100%; }
+  .day:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .day .date-number { font-size: 13px; line-height: 1; }
+  .day .day-counts { font-size: 9px; line-height: 1.1; text-align: center; }
+  .day-counts span { display: inline-block; }
+  .day-counts .tp-count { color: var(--tp); }
+  .day-counts .sl-count { color: var(--sl); }
+  .editor { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 12px; width: min(420px, calc(100vw - 28px)); padding: 18px; max-height: min(75vh, 640px); overflow-y: auto; }
+  .editor::backdrop { background: rgba(0,0,0,.72); }
+  .editor-header, .editor-actions, .trade-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .editor h2 { margin: 0; font-size: 18px; }
+  .editor button { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+  .editor button:hover { border-color: var(--accent); }
+  .editor-actions { margin: 14px 0; justify-content: flex-start; }
+  .editor-actions button { flex: 1; font-weight: 700; }
+  .editor-actions .add-tp { border-color: var(--tp); color: var(--tp); }
+  .editor-actions .add-sl { border-color: var(--sl); color: var(--sl); }
+  .editor-summary { color: var(--muted); margin: 12px 0; font-size: 13px; }
+  .trade-list { list-style: none; padding: 0; margin: 0; }
+  .trade-row { border-top: 1px solid var(--border); padding: 9px 0; font-size: 13px; }
+  .trade-row .trade-result { margin-right: auto; font-weight: 700; }
+  .trade-row .trade-result.tp { color: var(--tp); }
+  .trade-row .trade-result.sl { color: var(--sl); }
+  .trade-row button { padding: 5px 7px; font-size: 12px; }
+  .save-status { min-height: 1.2em; color: var(--sl); text-align: center; font-size: 12px; margin-top: 8px; }
+  .sync-bar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:16px 0; padding:10px 12px; background:var(--panel); border:1px solid var(--border); border-radius:10px; font-size:12px; }
+  .sync-bar button,.sync-panel button { background:var(--bg); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 10px; cursor:pointer; }
+  .sync-bar button:hover,.sync-panel button:hover { border-color:var(--accent); }
+  .sync-panel { background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:12px; width:min(440px,calc(100vw - 28px)); max-height:min(85vh,720px); overflow-y:auto; padding:18px; }
+  .sync-panel::backdrop { background:rgba(0,0,0,.72); }
+  .sync-panel h2 { font-size:18px; margin:0 0 10px; }
+  .sync-panel p { font-size:13px; color:var(--muted); margin:8px 0 14px; }
+  .sync-panel label { display:block; font-size:12px; margin:12px 0 5px; }
+  .sync-panel input,.sync-panel textarea,.sync-panel select { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); font:inherit; padding:9px; }
+  .sync-panel textarea { resize:none; overflow-wrap:anywhere; }
+  .sync-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+  .sync-actions button { flex:1 1 auto; }
+  .sync-actions .primary { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:700; }
+  .sync-panel section { border-top:1px solid var(--border); padding-top:12px; margin-top:16px; }
+  .sync-panel h3 { font-size:14px; margin:0 0 8px; }
+  .sync-error { color:#ff8585!important; min-height:1.2em; }
+  .sync-conflict-row { border-top:1px solid var(--border); margin:10px 0; padding-top:10px; }
+  .sync-conflict-row small { display:block; color:var(--muted); margin:5px 0; }
+  .sync-key-box[hidden], .sync-conflicts[hidden], .sync-setup[hidden], .sync-connected[hidden] { display:none; }
+  @media (max-width: 360px) { body { padding: 12px; } .stats { gap: 5px; } .stat .lbl { font-size: 9px; } .legend { gap: 10px; } }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+    justify-content: center;
+  }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .dot.tp { background: var(--tp); }
+  .dot.sl { background: var(--sl); }
+
+  .hint { text-align: center; font-size: 12px; color: var(--muted); margin-top: 14px; }
+  .reset { text-align: center; margin-top: 14px; }
+  .reset button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Calendario de Trading — TP / SL</h1>
+  <div class="sub">Toca un día para añadir sus trades</div>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="daysCount">0</div><div class="lbl">Días operados</div></div>
+    <div class="stat trades"><div class="num" id="tradeCount">0</div><div class="lbl">Trades</div></div>
+    <div class="stat tp"><div class="num" id="tpCount">0</div><div class="lbl">TP</div></div>
+    <div class="stat sl"><div class="num" id="slCount">0</div><div class="lbl">SL</div></div>
+    <div class="stat ratio"><div class="num" id="winRatio">—</div><div class="lbl">Win rate</div></div>
+  </div>
+
+  <div class="nav">
+    <button id="prevBtn">‹</button>
+    <div class="month-label" id="monthLabel"></div>
+    <button id="nextBtn">›</button>
+  </div>
+
+  <div class="grid" id="dowRow"></div>
+  <div class="grid" id="calGrid" style="margin-top:6px;"></div>
+
+  <div class="legend">
+    <span><span class="dot tp"></span> Take Profit</span>
+    <span><span class="dot sl"></span> Stop Loss</span>
+  </div>
+
+  <div class="hint">Toca un día para agregar, corregir o borrar trades individuales.</div>
+  <div class="save-status" id="saveStatus" role="status" aria-live="polite"></div>
+  <div class="sync-bar"><span id="syncBadge" role="status">Sincronización desactivada</span><button type="button" id="openSync">Sincronizar</button></div>
+  <div class="reset"><button id="exportTrades">Descargar copia JSON</button></div>
+  <div class="reset"><button id="resetBtn">Borrar todos los registros</button></div>
+</div>
+<dialog class="editor" id="dayEditor" aria-labelledby="editorTitle">
+  <div class="editor-header"><h2 id="editorTitle"></h2><button type="button" id="closeEditor" aria-label="Cerrar">✕</button></div>
+  <p class="editor-summary" id="editorSummary"></p>
+  <div class="editor-actions">
+    <button type="button" class="add-tp" id="addTp">+ TP</button>
+    <button type="button" class="add-sl" id="addSl">+ SL</button>
+  </div>
+  <ul class="trade-list" id="tradeList"></ul>
+</dialog>
+<dialog class="sync-panel" id="frangi-sync-dialog" aria-labelledby="syncTitle">
+  <div class="editor-header"><h2 id="syncTitle">Sincronizar trades</h2><button type="button" id="closeSync" aria-label="Cerrar">✕</button></div>
+  <p>Comparte tus registros entre computadoras y la web. Se cifran antes de enviarse. Puedes seguir registrando trades sin internet.</p>
+  <p id="syncStatus" role="status" aria-live="polite"></p>
+  <p class="sync-error" id="syncError" role="alert"></p>
+  <div class="sync-setup" id="syncSetup">
+    <div class="sync-actions"><button type="button" class="primary" id="createSync">Crear clave nueva</button></div>
+    <section><h3>Usar una clave que ya tienes</h3>
+      <p>Puedes usar la clave de MarketIntel. Los trades del calendario se guardarán separados de tu portafolio.</p>
+      <label for="syncInput">Clave privada</label><input id="syncInput" type="password" autocomplete="off" spellcheck="false" placeholder="FR1-… o MI1-…">
+      <div class="sync-actions"><button type="button" id="linkSync">Vincular este dispositivo</button><button type="button" id="createWithKey">Iniciar calendario con esta clave</button></div>
+    </section>
+  </div>
+  <div class="sync-connected" id="syncConnected" hidden>
+    <div class="sync-actions"><button type="button" class="primary" id="syncNow">Sincronizar ahora</button><button type="button" id="showSyncKey">Mostrar clave</button></div>
+    <div class="sync-key-box" id="syncKeyBox" hidden><label for="syncKey">Tu clave privada</label><textarea id="syncKey" rows="2" readonly></textarea><div class="sync-actions"><button type="button" id="copySyncKey">Copiar</button><button type="button" id="hideSyncKey">Ocultar</button></div><p>Guárdala: la necesitarás para vincular otro equipo. Quien la tenga podrá acceder a estos registros.</p></div>
+    <section><button type="button" id="disconnectSync">Desvincular este navegador</button><p>Los trades guardados aquí se conservan.</p></section>
+  </div>
+  <section class="sync-conflicts" id="syncConflicts" hidden><h3>Revisa estos trades</h3><p>Dos dispositivos cambiaron el mismo trade. Elige qué conservar.</p><div id="syncConflictList"></div><button type="button" id="resolveSync">Guardar las decisiones</button></section>
+</dialog>
+
+<script>
+/* Restore an interrupted local sync transaction before the app reads its data. */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else {
+    root.FrangiSyncRecovery = api;
+    try { api.recover(root.localStorage); }
+    catch (_) { root.FrangiSyncRecoveryError = true; }
+  }
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+  'use strict';
+  const JOURNAL = 'frangi_sync_journal';
+  function permitted(key) {
+    return key === 'frangi_sync_state' || (/^tpsl_calendar_trade_\d{4}-\d{2}-\d{2}$/.test(key));
+  }
+  function recover(storage) {
+    const raw = storage.getItem(JOURNAL);
+    if (!raw) return false;
+    const journal = JSON.parse(raw);
+    if (!journal || journal.version !== 1 || !Array.isArray(journal.entries) || journal.entries.length > 12000 ||
+      journal.entries.some(pair => !Array.isArray(pair) || pair.length !== 2 || !permitted(pair[0]) || (pair[1] !== null && typeof pair[1] !== 'string'))) {
+      throw new Error('No se pudo recuperar una sincronización interrumpida.');
+    }
+    // Removing destinations first frees enough space to restore their prior values.
+    journal.entries.forEach(pair => storage.removeItem(pair[0]));
+    journal.entries.forEach(pair => { if (pair[1] !== null) storage.setItem(pair[0], pair[1]); });
+    storage.removeItem(JOURNAL);
+    return true;
+  }
+  return { recover, permitted, JOURNAL };
+});
+
+</script>
+<script>
+  const STORAGE_PREFIX = 'tpsl_calendar_trade_';
+  const monthNames = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const dowNames = ['D','L','M','M','J','V','S'];
+  let viewYear = new Date().getFullYear();
+  let viewMonth = new Date().getMonth();
+  let trades = {}; // { YYYY-MM-DD: [{id, result}, ...] }
+  let selectedKey = null;
+  let saveQueue = Promise.resolve();
+  const editor = document.getElementById('dayEditor');
+
+  function keyFor(y, m, d) {
+    return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  }
+  function validKey(key) { return /^\d{4}-\d{2}-\d{2}$/.test(key); }
+  function newTrade(result) {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return {id: 't_' + Array.from(bytes, b => b.toString(16).padStart(2, '0')).join(''), result};
+  }
+  function normalize(value, date) {
+    // Old versions saved one result per day as TP/SL or an array of strings.
+    if (value === 'TP' || value === 'SL') value = [value];
+    if (typeof value === 'string') {
+      try { value = JSON.parse(value); } catch (_) { return []; }
+    }
+    if (!Array.isArray(value)) return [];
+    return value.map((item, index) => {
+      if (item === 'TP' || item === 'SL') return {id: 'legacy_' + date + '_' + index, result: item};
+      return item && typeof item.id === 'string' && ['TP', 'SL'].includes(item.result)
+        ? {id: item.id, result: item.result} : null;
+    }).filter(Boolean);
+  }
+  function hasRemoteStorage() {
+    return window.storage && typeof window.storage.list === 'function' && typeof window.storage.get === 'function';
+  }
+  function hasLocalStorage() {
+    try {
+      const test = '__tpsl_test__';
+      localStorage.setItem(test, '1');
+      localStorage.removeItem(test);
+      return true;
+    } catch (_) { return false; }
+  }
+  function loadLocal() {
+    if (!hasLocalStorage()) return;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_PREFIX) && validKey(key.slice(STORAGE_PREFIX.length))) {
+        const values = normalize(localStorage.getItem(key), key.slice(STORAGE_PREFIX.length));
+        if (values.length) trades[key.slice(STORAGE_PREFIX.length)] = values;
+      }
+    }
+  }
+  async function loadAll() {
+    if (hasRemoteStorage()) {
+      try {
+        const result = await window.storage.list('trade:', false);
+        for (const entry of (result && result.keys) || []) {
+          if (!entry.startsWith('trade:') || !validKey(entry.slice(6))) continue;
+          const saved = await window.storage.get(entry, false);
+          const values = normalize(saved && saved.value, entry.slice(6));
+          if (values.length) {
+            trades[entry.slice(6)] = values;
+            if (hasLocalStorage()) localStorage.setItem(STORAGE_PREFIX + entry.slice(6), JSON.stringify(values));
+          }
+        }
+      } catch (error) {
+        loadLocal();
+        document.getElementById('saveStatus').textContent = 'No se pudo leer el almacenamiento remoto; se muestran los datos guardados en este navegador.';
+      }
+    } else loadLocal();
+    render();
+  }
+  function persist(key) {
+    const values = trades[key];
+    const encoded = values ? JSON.stringify(values) : null;
+    if (hasLocalStorage()) {
+      try {
+        if (encoded === null) localStorage.removeItem(STORAGE_PREFIX + key);
+        else localStorage.setItem(STORAGE_PREFIX + key, encoded);
+      } catch (_) {
+        document.getElementById('saveStatus').textContent = 'No se pudo guardar el último cambio en este navegador.';
+      }
+    }
+    if (hasRemoteStorage()) {
+      // Serialize writes so rapidly added trades cannot be saved out of order.
+      saveQueue = saveQueue.catch(() => {}).then(() => encoded === null
+        ? window.storage.delete('trade:' + key, false)
+        : window.storage.set('trade:' + key, encoded, false));
+      saveQueue.catch(() => {
+        document.getElementById('saveStatus').textContent = 'No se pudo guardar el último cambio. Reintenta antes de cerrar la página.';
+      });
+    }
+  }
+  function updateDay(key, values) {
+    if (values.length) trades[key] = values;
+    else delete trades[key];
+    document.getElementById('saveStatus').textContent = '';
+    persist(key);
+    render();
+    renderEditor();
+  }
+  function renderEditor() {
+    if (!selectedKey) return;
+    const [year, month, day] = selectedKey.split('-').map(Number);
+    const values = trades[selectedKey] || [];
+    document.getElementById('editorTitle').textContent = `${day} de ${monthNames[month - 1]} de ${year}`;
+    const tp = values.filter(v => v.result === 'TP').length;
+    const sl = values.length - tp;
+    document.getElementById('editorSummary').textContent = values.length
+      ? `${values.length} trades · ${tp} TP · ${sl} SL · Win rate ${Math.round(tp / values.length * 100)}%`
+      : 'Todavía no hay trades en este día.';
+    const list = document.getElementById('tradeList');
+    list.replaceChildren();
+    values.forEach((value, index) => {
+      const row = document.createElement('li'); row.className = 'trade-row';
+      const number = document.createElement('span'); number.textContent = `Trade ${index + 1}`;
+      const result = document.createElement('span'); result.className = 'trade-result ' + value.result.toLowerCase(); result.textContent = value.result;
+      const change = document.createElement('button'); change.type = 'button';
+      change.textContent = 'Cambiar'; change.setAttribute('aria-label', `Cambiar trade ${index + 1} a ${value.result === 'TP' ? 'SL' : 'TP'}`);
+      change.addEventListener('click', () => {
+        const next = [...(trades[selectedKey] || [])];
+        next[index] = {...next[index], result: next[index].result === 'TP' ? 'SL' : 'TP'};
+        updateDay(selectedKey, next);
+      });
+      const remove = document.createElement('button'); remove.type = 'button';
+      remove.textContent = 'Borrar'; remove.setAttribute('aria-label', `Borrar trade ${index + 1}`);
+      remove.addEventListener('click', () => {
+        const next = [...(trades[selectedKey] || [])]; next.splice(index, 1);
+        updateDay(selectedKey, next);
+      });
+      row.append(number, result, change, remove); list.appendChild(row);
+    });
+  }
+  function render() {
+    document.getElementById('monthLabel').textContent = `${monthNames[viewMonth]} ${viewYear}`;
+    const dowRow = document.getElementById('dowRow'); dowRow.replaceChildren();
+    dowNames.forEach(name => {
+      const cell = document.createElement('div'); cell.className = 'dow'; cell.textContent = name;
+      dowRow.appendChild(cell);
+    });
+    const grid = document.getElementById('calGrid'); grid.replaceChildren();
+    const firstDow = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    for (let i = 0; i < firstDow; i++) {
+      const empty = document.createElement('div'); empty.className = 'day empty'; grid.appendChild(empty);
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = keyFor(viewYear, viewMonth, day);
+      const values = trades[key] || [];
+      const tp = values.filter(value => value.result === 'TP').length;
+      const sl = values.length - tp;
+      const cell = document.createElement('button'); cell.type = 'button'; cell.className = 'day';
+      cell.dataset.date = key;
+      if (tp && sl) cell.classList.add('mixed');
+      else if (tp) cell.classList.add('tp');
+      else if (sl) cell.classList.add('sl');
+      cell.setAttribute('aria-label', `${day} de ${monthNames[viewMonth]}: ${values.length} trades, ${tp} TP y ${sl} SL`);
+      const label = document.createElement('span'); label.className = 'date-number'; label.textContent = day;
+      cell.appendChild(label);
+      if (values.length) {
+        const counts = document.createElement('span'); counts.className = 'day-counts';
+        if (tp) { const el = document.createElement('span'); el.className = 'tp-count'; el.textContent = `${tp} TP`; counts.appendChild(el); }
+        if (sl) { const el = document.createElement('span'); el.className = 'sl-count'; el.textContent = `${sl} SL`; counts.appendChild(el); }
+        cell.appendChild(counts);
+      }
+      cell.addEventListener('click', () => { selectedKey = key; renderEditor(); editor.showModal(); });
+      grid.appendChild(cell);
+    }
+    const days = Object.values(trades).filter(values => values.length);
+    const tp = days.reduce((total, values) => total + values.filter(v => v.result === 'TP').length, 0);
+    const sl = days.reduce((total, values) => total + values.filter(v => v.result === 'SL').length, 0);
+    document.getElementById('daysCount').textContent = days.length;
+    document.getElementById('tradeCount').textContent = tp + sl;
+    document.getElementById('tpCount').textContent = tp;
+    document.getElementById('slCount').textContent = sl;
+    document.getElementById('winRatio').textContent = tp + sl ? Math.round(tp / (tp + sl) * 100) + '%' : '—';
+  }
+  document.getElementById('prevBtn').setAttribute('aria-label', 'Mes anterior');
+  document.getElementById('nextBtn').setAttribute('aria-label', 'Mes siguiente');
+  document.getElementById('prevBtn').addEventListener('click', () => {
+    if (--viewMonth < 0) { viewMonth = 11; viewYear--; }
+    render();
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    if (++viewMonth > 11) { viewMonth = 0; viewYear++; }
+    render();
+  });
+  document.getElementById('closeEditor').addEventListener('click', () => editor.close());
+  document.getElementById('addTp').addEventListener('click', () => updateDay(selectedKey, [...(trades[selectedKey] || []), newTrade('TP')]));
+  document.getElementById('addSl').addEventListener('click', () => updateDay(selectedKey, [...(trades[selectedKey] || []), newTrade('SL')]));
+  document.getElementById('exportTrades').addEventListener('click', () => {
+    const snapshot = {version: 1, days: trades};
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url; anchor.download = 'Frangi-trades-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(anchor); anchor.click(); anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!confirm('¿Borrar todos los trades guardados?')) return;
+    const keys = Object.keys(trades);
+    trades = {}; render(); renderEditor();
+    keys.forEach(persist);
+  });
+  const readyTrades = loadAll();
+</script>
+<script>(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.FrangiSyncCore = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+  const PREFIX = 'tpsl_calendar_trade_';
+  const MAX_BYTES = 2 * 1024 * 1024;
+  const own = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+  function validDate(date) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return false;
+    const [year, month, day] = date.split('-').map(Number);
+    return year >= 2000 && year <= 9999 && month >= 1 && month <= 12 &&
+      day >= 1 && day <= new Date(year, month, 0).getDate();
+  }
+  function plain(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    const proto = Object.getPrototypeOf(value);
+    return proto === null || proto === Object.prototype;
+  }
+  function check(value) {
+    if (!plain(value) || Object.keys(value).some(k => ['__proto__', 'constructor', 'prototype'].includes(k)))
+      throw new Error('Los registros del calendario tienen un formato inválido.');
+    return value;
+  }
+  function normalizeDay(value, date) {
+    if (value === 'TP' || value === 'SL') value = [value];
+    if (typeof value === 'string') {
+      try { value = JSON.parse(value); } catch (_) { throw new Error('No se pudo leer un día guardado.'); }
+    }
+    if (!Array.isArray(value) || value.length > 10000) throw new Error('Un día guardado tiene datos inválidos.');
+    const seen = new Set();
+    return value.map((item, index) => {
+      const trade = typeof item === 'string' ? {id: 'legacy_' + date + '_' + index, result: item} : check(item);
+      if (Object.keys(trade).some(k => !['id', 'result'].includes(k)) ||
+          typeof trade.id !== 'string' || !/^[A-Za-z0-9_-]{1,100}$/.test(trade.id) ||
+          !['TP', 'SL'].includes(trade.result) || seen.has(trade.id))
+        throw new Error('Un trade guardado tiene datos inválidos.');
+      seen.add(trade.id);
+      return {id: trade.id, result: trade.result};
+    });
+  }
+  function validate(input) {
+    check(input);
+    if (input.version !== 1 || !plain(input.days) || Object.keys(input).some(k => !['version', 'days'].includes(k)))
+      throw new Error('La copia sincronizada no es compatible.');
+    const output = {version: 1, days: {}};
+    let total = 0;
+    for (const date of Object.keys(check(input.days)).sort()) {
+      if (!validDate(date)) throw new Error('Fecha inválida en los registros.');
+      const values = normalizeDay(input.days[date], date);
+      total += values.length;
+      if (total > 10000) throw new Error('El calendario supera 10.000 trades.');
+      if (values.length) output.days[date] = values;
+    }
+    if (new TextEncoder().encode(JSON.stringify(output)).length > MAX_BYTES)
+      throw new Error('El calendario supera el límite de 2 MB para sincronizar.');
+    return output;
+  }
+  function capture(storage) {
+    const days = {};
+    for (let index = 0; index < storage.length; index++) {
+      const key = storage.key(index);
+      if (!key || !key.startsWith(PREFIX)) continue;
+      const date = key.slice(PREFIX.length);
+      if (validDate(date)) days[date] = storage.getItem(key);
+    }
+    return validate({version: 1, days});
+  }
+  function fingerprint(snapshot) { return JSON.stringify(validate(snapshot)); }
+  function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+  function merge(base, local, remote, choices = {}) {
+    const prior = base === null ? {version: 1, days: {}} : validate(base);
+    const left = validate(local), right = validate(remote);
+    check(choices);
+    const output = {version: 1, days: {}}, conflicts = [];
+    const dates = new Set([...Object.keys(prior.days), ...Object.keys(left.days), ...Object.keys(right.days)]);
+    for (const date of [...dates].sort()) {
+      const b = prior.days[date] || [], l = left.days[date] || [], r = right.days[date] || [];
+      const bm = new Map(b.map(t => [t.id, t])), lm = new Map(l.map(t => [t.id, t])), rm = new Map(r.map(t => [t.id, t]));
+      const ids = [...new Set([...b, ...l, ...r].map(t => t.id))], values = [];
+      for (const id of ids) {
+        const previous = bm.get(id), localTrade = lm.get(id), remoteTrade = rm.get(id);
+        let chosen;
+        if (same(localTrade, remoteTrade)) chosen = localTrade;
+        else if (same(localTrade, previous)) chosen = remoteTrade;
+        else if (same(remoteTrade, previous)) chosen = localTrade;
+        else {
+          const conflictId = 'trade:' + date + ':' + id;
+          const choice = own(choices, conflictId) ? choices[conflictId] : null;
+          if (choice === 'local') chosen = localTrade;
+          else if (choice === 'remote') chosen = remoteTrade;
+          else if (choice === 'both') {
+            chosen = localTrade || remoteTrade;
+            if (localTrade && remoteTrade && !same(localTrade, remoteTrade)) {
+              let copyId = 'copy_' + id.slice(0, 70), counter = 0;
+              while (ids.includes(copyId) || values.some(t => t.id === copyId)) copyId = 'copy_' + id.slice(0, 60) + '_' + (++counter);
+              values.push({id: copyId, result: remoteTrade.result});
+            }
+          } else {
+            conflicts.push({id: conflictId, kind: 'trade', key: date, name: 'Trade del ' + date,
+              local: localTrade || null, remote: remoteTrade || null, base: previous || null});
+            chosen = localTrade;
+          }
+        }
+        if (chosen) values.push(chosen);
+      }
+      if (values.length) output.days[date] = values;
+    }
+    return {snapshot: validate(output), conflicts};
+  }
+  function planApply(storage, value) {
+    const snapshot = validate(value), set = {}, remove = [];
+    for (const [date, values] of Object.entries(snapshot.days)) set[PREFIX + date] = JSON.stringify(values);
+    for (let index = 0; index < storage.length; index++) {
+      const key = storage.key(index);
+      if (key && key.startsWith(PREFIX) && validDate(key.slice(PREFIX.length)) && !own(set, key)) remove.push(key);
+    }
+    for (const key of Object.keys(set)) if (storage.getItem(key) === set[key]) delete set[key];
+    return {set, remove};
+  }
+  return {capture, fingerprint, merge, planApply, validate, validDate, normalizeDay, MAX_BYTES};
+});
+</script>
+<script>(function () {
+  'use strict';
+  const origin = 'https://marketintel-nu.vercel.app';
+  const $ = id => document.getElementById(id);
+  const dialog = $('frangi-sync-dialog');
+  const keyBox = $('syncKeyBox');
+  const message = $('syncStatus');
+  const error = $('syncError');
+  let engine, state = {status:'disconnected', connected:false, conflicts:[]}, busy = false;
+  let actionError = '';
+  const choices = new Map();
+  const labels = {disconnected:'Sin sincronizar',idle:'Sincronizado',syncing:'Sincronizando…',
+    offline:'Sin conexión · cambios pendientes',pending:'Cambios pendientes',
+    conflict:'Hay trades que revisar',error:'No se pudo sincronizar',
+    unsupported:'Sincronización no disponible en este navegador'};
+  function cleanError(value) {
+    return String(value && value.message || value || '').replace(/(?:FR1|MI1)-[A-Za-z0-9_-]+/g,'[clave privada]').slice(0,300);
+  }
+  function renderSync() {
+    $('syncBadge').textContent = labels[state.status] || labels.error;
+    message.textContent = state.lastSynced && state.status === 'idle'
+      ? 'Sincronizado · ' + new Date(state.lastSynced).toLocaleString('es') : labels[state.status] || labels.error;
+    error.textContent = actionError || state.error || '';
+    $('syncSetup').hidden = Boolean(state.connected);
+    $('syncConnected').hidden = !state.connected;
+    $('syncNow').disabled = busy || !state.connected;
+    for (const id of ['createSync','linkSync','createWithKey','disconnectSync']) $(id).disabled = busy;
+    const conflicts = state.conflicts || [];
+    const panel = $('syncConflicts'); panel.hidden = !conflicts.length;
+    const list = $('syncConflictList'); list.replaceChildren();
+    for (const item of conflicts) {
+      const row = document.createElement('div'); row.className = 'sync-conflict-row';
+      const title = document.createElement('strong'); title.textContent = item.name;
+      const detail = document.createElement('small');
+      detail.textContent = 'Aquí: ' + (item.local?.result || 'borrado') + ' · Otro dispositivo: ' + (item.remote?.result || 'borrado');
+      const select = document.createElement('select'); select.setAttribute('aria-label','Decisión para '+item.name);
+      select.dataset.conflict = item.id;
+      [['','Elige qué conservar'],['local','Este dispositivo'],['remote','Otro dispositivo'],['both','Ambos resultados']].forEach(([value,label]) => {
+        const option = document.createElement('option'); option.value = value; option.textContent = label; select.appendChild(option);
+      });
+      select.value = choices.get(item.id) || '';
+      select.addEventListener('change', () => choices.set(item.id, select.value));
+      row.append(title,detail,select); list.appendChild(row);
+    }
+  }
+  function hideKey() { $('syncKey').value = ''; keyBox.hidden = true; }
+  async function showKey() {
+    const code = engine.revealCode();
+    if (!code) return;
+    $('syncKey').value = code; keyBox.hidden = false;
+    $('syncKey').focus(); $('syncKey').select();
+  }
+  async function run(action) {
+    if (busy || !engine) return;
+    busy = true; actionError = ''; renderSync();
+    try { await action(); state = engine.getState(); }
+    catch (reason) { actionError = cleanError(reason); }
+    finally { busy = false; renderSync(); }
+  }
+  $('openSync').addEventListener('click', () => { renderSync(); dialog.showModal(); });
+  $('closeSync').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => { hideKey(); $('syncInput').value = ''; });
+  $('hideSyncKey').addEventListener('click', hideKey);
+  $('createSync').addEventListener('click', () => run(async () => { await engine.create(); await showKey(); }));
+  $('createWithKey').addEventListener('click', () => run(async () => {
+    await engine.create($('syncInput').value.trim());
+    if (engine.getState().connected) { $('syncInput').value = ''; await showKey(); }
+  }));
+  $('linkSync').addEventListener('click', () => run(async () => {
+    await engine.connect($('syncInput').value.trim());
+    if (engine.getState().connected) $('syncInput').value = '';
+  }));
+  $('syncNow').addEventListener('click', () => run(() => engine.sync()));
+  $('showSyncKey').addEventListener('click', () => run(showKey));
+  $('copySyncKey').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('syncKey').value); message.textContent = 'Clave copiada.'; }
+    catch (_) { $('syncKey').focus(); $('syncKey').select(); message.textContent = 'Clave seleccionada: pulsa Ctrl+C.'; }
+  });
+  $('disconnectSync').addEventListener('click', () => run(async () => { await engine.disconnect(); hideKey(); }));
+  $('resolveSync').addEventListener('click', () => run(async () => {
+    const selections = {};
+    for (const item of state.conflicts) {
+      if (!choices.get(item.id)) throw new Error('Elige qué conservar en cada trade.');
+      selections[item.id] = choices.get(item.id);
+    }
+    await engine.sync(selections);
+    if (!engine.getState().conflicts.length) choices.clear();
+  }));
+
+  function bridgeFetch() {
+    const iframe = document.createElement('iframe');
+    iframe.src = origin + '/frangi/bridge.html';
+    iframe.hidden = true; iframe.title = 'Conexión cifrada del calendario';
+    document.body.appendChild(iframe);
+    let loaded = false;
+    iframe.addEventListener('load', () => { loaded = true; });
+    return async (_url, options) => {
+      for (let count = 0; !loaded && count < 100; count++) await new Promise(resolve => setTimeout(resolve,100));
+      if (!loaded) throw new Error('No se pudo abrir la conexión con la web. Tus cambios locales siguen guardados.');
+      const id = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+      const conditionName = options.method === 'PUT' ? Object.keys(options.headers).find(key => key.startsWith('X-Sync-')) : null;
+      const request = {channel:'frangi-sync-v1',id,method:options.method,
+        authorization:options.headers.Authorization,
+        condition:conditionName ? {name:conditionName,value:options.headers[conditionName]} : null,
+        envelope:options.body ? JSON.parse(options.body) : null};
+      return new Promise((resolve,reject) => {
+        const timer = setTimeout(() => { window.removeEventListener('message', receive); reject(new Error('La conexión tardó demasiado.')); },24000);
+        function receive(event) {
+          if (event.source !== iframe.contentWindow || event.origin !== origin || !event.data || event.data.channel !== request.channel || event.data.id !== id) return;
+          clearTimeout(timer); window.removeEventListener('message', receive);
+          resolve(new Response(event.data.body,{status:event.data.status,headers:{'Content-Type':'application/json'}}));
+        }
+        window.addEventListener('message', receive);
+        iframe.contentWindow.postMessage(request,origin);
+      });
+    };
+  }
+  window.FrangiSyncOptions = {
+    core:window.FrangiSyncCore, recovery:window.FrangiSyncRecovery,
+    fetch:location.protocol === 'file:' ? bridgeFetch() : undefined,
+    backup: () => localStorage.setItem('frangi_sync_before_restore', JSON.stringify(window.FrangiSyncCore.capture(localStorage))),
+    onApplied: snapshot => {
+      trades = {};
+      for (const [date, values] of Object.entries(snapshot.days)) trades[date] = values;
+      render(); renderEditor();
+    },
+    isEditing: manual => editor.open || (document.activeElement?.matches('input,textarea,select') &&
+      document.activeElement.getClientRects().length > 0 && !(manual && dialog.contains(document.activeElement)))
+  };
+  window.FrangiStartSync = async () => {
+    if (hasRemoteStorage()) {
+      state = {...state,status:'unsupported',error:'Abre la versión local o web del calendario para sincronizar.'}; renderSync(); return;
+    }
+    if (!hasLocalStorage() || !window.crypto?.subtle) {
+      state = {...state,status:'unsupported',error:'Este navegador no permite guardar o cifrar tus trades.'}; renderSync(); return;
+    }
+    engine = window.FrangiSyncEngine;
+    state = await engine.ready(); engine.subscribe(next => { state = next; renderSync(); });
+    renderSync();
+  };
+  renderSync();
+})();
+</script>
+<script>(function (root, factory) {
+  'use strict';
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else {
+    root.FrangiSync = factory();
+    root.FrangiSyncEngine = root.FrangiSync.createEngine(Object.assign({ window: root }, root.FrangiSyncOptions || {}));
+  }
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+  'use strict';
+  const STATE = 'frangi_sync_state', JOURNAL = 'frangi_sync_journal';
+  const MAX_BYTES = 2097152;
+  function createEngine(options = {}) {
+    const win = options.window || (typeof window !== 'undefined' ? window : null);
+    const doc = options.document || (win && win.document);
+    const storage = options.storage || (win && win.localStorage);
+    const core = options.core || (win && win.FrangiSyncCore);
+    const crypt = options.crypto || (win && win.crypto);
+    const locks = options.locks || (win && win.navigator && win.navigator.locks);
+    const fetcher = options.fetch || (win && win.fetch.bind(win));
+    const recovery = options.recovery || (win && win.FrangiSyncRecovery);
+    const encoder = new TextEncoder(), decoder = new TextDecoder('utf-8', { fatal: true });
+    const clock = options.now || Date.now;
+    const timers = new Set();
+    const subscribers = new Set();
+    const localHost = win && ['localhost', '127.0.0.1', '[::1]', '::1'].includes(win.location.hostname);
+    const baseURL = options.baseURL != null ? options.baseURL : localHost ? 'https://marketintel-nu.vercel.app' : '';
+    const online = options.online || (() => !win || win.navigator.onLine !== false);
+    const backup = options.backup || (() => {
+      if (!win || !win.FrangiBackup) throw new Error('No se pudo preparar el respaldo antes de sincronizar.');
+      return win.FrangiBackup.save('before-restore');
+    });
+    const visible = () => !doc || doc.visibilityState !== 'hidden';
+    const isEditing = options.isEditing || (manual => {
+      if (!doc) return false;
+      const own = doc.getElementById('frangi-sync-dialog');
+      const active = doc.activeElement;
+      if (active && active.matches('input,textarea,select,[contenteditable="true"]')
+          && active.getClientRects().length > 0 && win.getComputedStyle(active).visibility !== 'hidden'
+          && !(manual && own && own.contains(active))) return true;
+      return Array.from(doc.querySelectorAll('dialog[open],.modal.active,.modal.open,.modal-overlay.active,.modal-overlay.open,[role="dialog"]')).some(el => {
+        if (manual && el === own) return false;
+        const style = win.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden' && (el.getClientRects().length > 0);
+      });
+    });
+    let state = { status: 'disconnected', connected: false, lastSynced: null, pending: false, error: null, conflicts: [] };
+    let initial, activeRun = null, disposed = false, started = false, observed = null, debounce = null;
+    let conflictContext = null, refreshNeeded = false, releasePage = null, pageLease = null;
+    const guardTabs = options.guardTabs !== false && Boolean(win && doc);
+    function b64(bytes) {
+      let binary = '';
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      return (typeof btoa === 'function' ? btoa(binary) : Buffer.from(bytes).toString('base64')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+    function unb64(value) {
+      if (typeof value !== 'string' || !/^[A-Za-z0-9_-]+$/.test(value)) throw new Error('La clave o copia de sincronización no es válida.');
+      const binary = typeof atob === 'function' ? atob(value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4)) : Buffer.from(value, 'base64url').toString('binary');
+      const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+      if (b64(bytes) !== value) throw new Error('La clave o copia de sincronización no es válida.');
+      return bytes;
+    }
+    function codeBytes(code) {
+      if (typeof code !== 'string' || !/^(?:FR1|MI1)-[A-Za-z0-9_-]{43}$/.test(code.trim())) throw new Error('Introduce la clave privada completa que comienza por FR1- o MI1-.');
+      const bytes = unb64(code.trim().slice(4));
+      if (bytes.length !== 32) throw new Error('La clave privada no es válida.');
+      return bytes;
+    }
+    function publish(next = {}) {
+      state = Object.assign({}, state, next);
+      for (const cb of subscribers) { try { cb(getState()); } catch (_) {} }
+      return getState();
+    }
+    function getState() { return Object.assign({}, state, { conflicts: state.conflicts.map(item => Object.assign({}, item)) }); }
+    function readRecord() {
+      const raw = storage.getItem(STATE);
+      if (!raw) return null;
+      const record = JSON.parse(raw);
+      if (!record || record.version !== 1 || typeof record.creator !== 'boolean') throw new Error('La configuración de sincronización está dañada. Tus datos locales siguen disponibles.');
+      codeBytes(record.code);
+      if (record.base !== null) core.validate(record.base);
+      if (record.revision !== null && (typeof record.revision !== 'string' || !record.revision.length)) throw new Error('La versión de sincronización no es válida.');
+      return record;
+    }
+    function persist(record) { storage.setItem(STATE, JSON.stringify(record)); }
+    function current() { return core.capture(storage); }
+    function fingerprint(snapshot) { return core.fingerprint(snapshot); }
+    function same(a, b) { return fingerprint(a) === fingerprint(b); }
+    function assertSupported() {
+      if (!storage || !core || !crypt || !crypt.subtle || !locks || typeof locks.request !== 'function' || !fetcher) {
+        throw new Error('Para sincronizar abre frangi.html en un navegador actualizado. Tus datos locales siguen disponibles.');
+      }
+      if ((win && win.FrangiSyncRecoveryError) || storage.getItem(JOURNAL)) throw new Error('Hay una recuperación local pendiente. Recarga la página antes de sincronizar.');
+    }
+    async function keys(code) {
+      const master = codeBytes(code);
+      async function derive(label) {
+        const prefix = encoder.encode(label + '\0');
+        const input = new Uint8Array(prefix.length + master.length);
+        input.set(prefix); input.set(master, prefix.length);
+        return new Uint8Array(await crypt.subtle.digest('SHA-256', input));
+      }
+      const auth = b64(await derive('Frangi sync auth v1'));
+      const key = await crypt.subtle.importKey('raw', await derive('Frangi sync encryption v1'), 'AES-GCM', false, ['encrypt', 'decrypt']);
+      return { auth, key };
+    }
+    async function encrypt(snapshot, derived) {
+      const data = encoder.encode(JSON.stringify(core.validate(snapshot)));
+      if (data.length > MAX_BYTES) throw new Error('Tus datos superan el límite de 2 MB para sincronizar. Las copias locales siguen disponibles.');
+      const iv = crypt.getRandomValues(new Uint8Array(12));
+      const ciphertext = new Uint8Array(await crypt.subtle.encrypt({ name: 'AES-GCM', iv }, derived.key, data));
+      return { version: 1, iv: b64(iv), ciphertext: b64(ciphertext) };
+    }
+    async function decrypt(envelope, derived) {
+      try {
+        if (!envelope || envelope.version !== 1 || Object.keys(envelope).sort().join(',') !== 'ciphertext,iv,version' || typeof envelope.ciphertext !== 'string' || envelope.ciphertext.length > 2796224) throw new Error();
+        const iv = unb64(envelope.iv), cipher = unb64(envelope.ciphertext);
+        if (iv.length !== 12 || cipher.length < 16 || cipher.length > MAX_BYTES + 16) throw new Error();
+        const plaintext = await crypt.subtle.decrypt({ name: 'AES-GCM', iv }, derived.key, cipher);
+        return core.validate(JSON.parse(decoder.decode(plaintext)));
+      } catch (_) { throw new Error('No se pudo abrir la copia cifrada. Revisa la clave privada; tus datos locales no se han cambiado.'); }
+    }
+    async function request(derived, method, envelope, revision) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 25000);
+      const headers = { Authorization: 'Bearer ' + derived.auth };
+      if (method === 'PUT') {
+        headers['Content-Type'] = 'application/json';
+        headers[revision === null ? 'X-Sync-If-None-Match' : 'X-Sync-If-Match'] = revision === null ? '*' : revision;
+      }
+      try {
+        const response = await fetcher(baseURL + '/sync/data', { method, headers, cache: 'no-store', credentials: 'omit', referrerPolicy: 'no-referrer', signal: controller.signal, ...(method === 'PUT' ? { body: JSON.stringify(envelope) } : {}) });
+        const text = await response.text();
+        if (text.length > 3000000) throw new Error('La respuesta de sincronización es demasiado grande.');
+        let data;
+        try { data = JSON.parse(text); } catch (_) { throw new Error('El servicio de sincronización no respondió correctamente.'); }
+        if (!response.ok) {
+          const error = new Error(response.status === 404 ? 'No existe una copia con esta clave privada.' : response.status === 409 ? 'Otro dispositivo acaba de guardar cambios.' : response.status === 429 ? 'Espera un minuto antes de volver a sincronizar.' : 'No se pudo conectar con la sincronización. Tus cambios locales se conservan.');
+          error.status = response.status;
+          throw error;
+        }
+        if (!data || typeof data.revision !== 'string' || !data.revision.length || data.revision.length > 256) throw new Error('El servidor no confirmó la versión de los datos.');
+        return data;
+      } catch (error) {
+        if (error.name === 'AbortError' || error instanceof TypeError) throw new Error('No se pudo conectar con la sincronización. Tus cambios locales se conservan.');
+        throw error;
+      } finally { clearTimeout(timeout); }
+    }
+    function fail(error) {
+      let record = null;
+      try { record = readRecord(); } catch (_) {}
+      return publish({ status: online() ? 'error' : 'offline', connected: Boolean(record), pending: Boolean(record), error: error.message || 'No se pudo sincronizar. Tus datos locales se conservan.' });
+    }
+    async function acquirePage() {
+      if (!guardTabs || releasePage || disposed) return;
+      await new Promise((resolve, reject) => {
+        pageLease = locks.request('frangi-sync-page-v1', { mode: 'shared' }, () => new Promise(done => {
+          releasePage = () => { releasePage = null; done(); };
+          resolve();
+        })).catch(reject);
+      });
+    }
+    async function exclusiveApply(action) {
+      if (!guardTabs) return action();
+      if (releasePage) { releasePage(); await pageLease; }
+      try {
+        return await locks.request('frangi-sync-page-v1', { mode: 'exclusive', ifAvailable: true }, async lock => {
+          if (!lock) {
+            publish({ status: 'pending', pending: true, error: 'Cierra las otras pestañas del calendario en este navegador para recibir los cambios.' });
+            return false;
+          }
+          return action();
+        });
+      } finally { await acquirePage(); }
+    }
+    function finishRefresh() {
+      if (!refreshNeeded || isEditing(false)) return;
+      refreshNeeded = false;
+      if (options.refresh) options.refresh();
+      else if (win) win.location.reload();
+    }
+    function notifyApplied(snapshot) {
+      const hook = options.onApplied || (win && win.FrangiSyncRefresh);
+      if (hook) {
+        hook(snapshot);
+      } else {
+        refreshNeeded = true;
+        if (win) win.dispatchEvent(new win.CustomEvent('frangi-sync-applied'));
+      }
+    }
+    async function apply(snapshot, before, record, remote, revision, manual) {
+      if (isEditing(manual)) { publish({ status: 'pending', pending: true, error: 'Termina de editar o cierra el formulario para recibir los cambios.' }); return false; }
+      return exclusiveApply(async () => {
+        await backup();
+        if (!same(current(), before) || isEditing(manual)) {
+          publish({ status: 'pending', pending: true, error: 'Hay cambios nuevos en este dispositivo. Se volverán a comparar antes de sincronizar.' });
+          return false;
+        }
+        const plan = core.planApply(storage, snapshot);
+        const nextRecord = Object.assign({}, record, { base: remote, revision });
+        const mutations = Array.from(new Set([...Object.keys(plan.set), ...plan.remove, STATE]));
+        if (mutations.length > 12000) throw new Error('Demasiados datos para preparar la recuperación local.');
+        if (recovery && mutations.some(key => !recovery.permitted(key))) throw new Error('La copia contiene datos incompatibles.');
+        const entries = mutations.map(key => [key, storage.getItem(key)]);
+        // The journal must be durably stored before the first local mutation.
+        storage.setItem(JOURNAL, JSON.stringify({ version: 1, entries }));
+        try {
+          plan.remove.forEach(key => storage.removeItem(key));
+          Object.entries(plan.set).forEach(([key, value]) => storage.setItem(key, value));
+          persist(nextRecord);
+          // Refresh synchronous app globals before callbacks or quote timers resume.
+          notifyApplied(snapshot);
+          storage.removeItem(JOURNAL);
+        } catch (error) {
+          if (recovery) recovery.recover(storage);
+          else {
+            entries.forEach(([key]) => storage.removeItem(key));
+            entries.forEach(([key, value]) => { if (value !== null) storage.setItem(key, value); });
+            storage.removeItem(JOURNAL);
+          }
+          try { notifyApplied(before); } catch (_) {}
+          throw error;
+        }
+        return true;
+      });
+    }
+    async function perform(choices, manual) {
+      assertSupported();
+      let record = readRecord();
+      if (!record) return publish({ status: 'disconnected', connected: false, pending: false, error: null, conflicts: [] });
+      if (!online()) return publish({ status: 'offline', connected: true, pending: true, error: null });
+      publish({ status: 'syncing', connected: true, error: null });
+      const derived = await keys(record.code);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        let remote, revision;
+        try {
+          const response = await request(derived, 'GET');
+          remote = await decrypt(response.envelope, derived);
+          revision = response.revision;
+        } catch (error) {
+          if (error.status !== 404 || !record.creator || record.base !== null) throw error;
+          remote = null; revision = null;
+        }
+        const local = current();
+        const context = { local: fingerprint(local), remote: remote === null ? null : fingerprint(remote) };
+        const safeChoices = choices && conflictContext && conflictContext.local === context.local && conflictContext.remote === context.remote ? choices : {};
+        const merged = remote === null ? { snapshot: local, conflicts: [] } : core.merge(record.base, local, remote, safeChoices);
+        if (merged.conflicts.length) {
+          conflictContext = context;
+          return publish({ status: 'conflict', connected: true, pending: true, error: null, conflicts: merged.conflicts });
+        }
+        conflictContext = null;
+        publish({ conflicts: [] });
+        if (!same(merged.snapshot, local)) {
+          if (!await apply(merged.snapshot, local, record, remote, revision, manual)) return getState();
+          record = readRecord();
+        }
+        // Remember exactly the snapshot acknowledged remotely, not edits made while awaiting the request.
+        if (remote === null || !same(merged.snapshot, remote)) {
+          const envelope = await encrypt(merged.snapshot, derived);
+          try { revision = (await request(derived, 'PUT', envelope, revision)).revision; }
+          catch (error) {
+            if (error.status === 409) { record = readRecord(); choices = null; continue; }
+            throw error;
+          }
+        }
+        record = Object.assign({}, record, { base: merged.snapshot, revision, lastSynced: new Date(clock()).toISOString() });
+        persist(record);
+        const latest = current();
+        const pending = !same(latest, record.base);
+        observed = fingerprint(latest);
+        publish({ status: pending ? 'pending' : 'idle', connected: true, lastSynced: record.lastSynced, pending, error: null, conflicts: [] });
+        if (pending) schedule();
+        finishRefresh();
+        return getState();
+      }
+      return publish({ status: 'pending', connected: true, pending: true, error: 'Otro dispositivo sigue guardando cambios. Vuelve a sincronizar en un momento.' });
+    }
+    async function locked(action) {
+      await ready();
+      assertSupported();
+      return locks.request('frangi-sync-run-v1', { mode: 'exclusive' }, action);
+    }
+    function sync(choices, manual = true) {
+      if (activeRun) return activeRun;
+      activeRun = locked(() => perform(choices, manual)).catch(fail).finally(() => { activeRun = null; finishRefresh(); });
+      return activeRun;
+    }
+    async function create(existingCode) {
+      try {
+        return await locked(async () => {
+          if (readRecord()) throw new Error('Este dispositivo ya está vinculado. Desconéctalo antes de crear otra sincronización.');
+          const snapshot = current();
+          // Validate size before creating a new capability.
+          if (encoder.encode(JSON.stringify(snapshot)).length > MAX_BYTES) throw new Error('Tus datos superan el límite de 2 MB para sincronizar.');
+          const code = existingCode ? String(existingCode).trim() : 'FR1-' + b64(crypt.getRandomValues(new Uint8Array(32)));
+          codeBytes(code);
+          persist({ version: 1, code, creator: true, base: null, revision: null, lastSynced: null });
+          return perform(null, true);
+        });
+      } catch (error) { return fail(error); }
+    }
+    async function connect(code) {
+      try {
+        return await locked(async () => {
+          if (readRecord()) throw new Error('Este dispositivo ya está vinculado. Desconéctalo antes de usar otra clave.');
+          const clean = String(code || '').trim();
+          const derived = await keys(clean);
+          const remote = await request(derived, 'GET');
+          await decrypt(remote.envelope, derived);
+          persist({ version: 1, code: clean, creator: false, base: null, revision: remote.revision, lastSynced: null });
+          return perform(null, true);
+        });
+      } catch (error) { return fail(error); }
+    }
+    async function disconnect() {
+      try {
+        return await locked(() => {
+          storage.removeItem(STATE); conflictContext = null;
+          return publish({ status: 'disconnected', connected: false, pending: false, error: null, conflicts: [], lastSynced: null });
+        });
+      } catch (error) { return fail(error); }
+    }
+    function revealCode() { const record = readRecord(); return record ? record.code : null; }
+    function schedule() {
+      if (!started || disposed || debounce !== null) return;
+      debounce = setTimeout(() => { timers.delete(debounce); debounce = null; if (visible()) sync(null, false); }, 5000);
+      timers.add(debounce);
+    }
+    function observe() {
+      if (disposed) return;
+      finishRefresh();
+      try {
+        const record = readRecord();
+        if (!record) return;
+        const snapshot = current(), value = fingerprint(snapshot);
+        if (value !== observed) {
+          observed = value;
+          const pending = record.base === null || !same(snapshot, record.base);
+          if (!activeRun && state.status !== 'conflict') publish({ pending, connected: true, status: pending ? online() ? 'pending' : 'offline' : 'idle' });
+          if (pending && state.status !== 'conflict') schedule();
+        }
+      } catch (error) { fail(error); }
+    }
+    function wake() { if (visible() && state.connected && !activeRun) sync(null, false); }
+    function storageEvent(event) {
+      if (event.key === STATE) {
+        try {
+          const record = readRecord();
+          publish({ connected: Boolean(record), lastSynced: record && record.lastSynced, status: record ? 'pending' : 'disconnected', conflicts: [] });
+          observed = null;
+        } catch (error) { fail(error); }
+      }
+    }
+    function start() {
+      if (started || disposed || options.autoStart === false) return;
+      started = true;
+      timers.add(setInterval(observe, 2000));
+      timers.add(setInterval(wake, 300000));
+      if (win) { win.addEventListener('online', wake); win.addEventListener('focus', wake); win.addEventListener('storage', storageEvent); win.addEventListener('pagehide', dispose); }
+      if (doc) doc.addEventListener('visibilitychange', wake);
+      if (state.connected) schedule();
+    }
+    function ready() {
+      if (!initial) initial = (async () => {
+        try {
+          assertSupported();
+          await acquirePage();
+          const record = readRecord();
+          const snapshot = current();
+          observed = fingerprint(snapshot);
+          const pending = record && (record.base === null || !same(snapshot, record.base));
+          publish({ status: record ? online() ? pending ? 'pending' : 'idle' : 'offline' : 'disconnected', connected: Boolean(record), lastSynced: record && record.lastSynced, pending: Boolean(pending), error: null });
+          start();
+        } catch (error) { publish({ status: 'unsupported', error: error.message }); }
+        return getState();
+      })();
+      return initial;
+    }
+    function subscribe(callback) { subscribers.add(callback); callback(getState()); return () => subscribers.delete(callback); }
+    function dispose() {
+      disposed = true;
+      for (const timer of timers) { clearTimeout(timer); clearInterval(timer); }
+      timers.clear();
+      if (releasePage) releasePage();
+      if (win) { win.removeEventListener('online', wake); win.removeEventListener('focus', wake); win.removeEventListener('storage', storageEvent); win.removeEventListener('pagehide', dispose); }
+      if (doc) doc.removeEventListener('visibilitychange', wake);
+    }
+    return { ready, create, connect, disconnect, sync, getState, subscribe, revealCode, dispose };
+  }
+  return { createEngine };
+});
+</script>
+<script>readyTrades.then(window.FrangiStartSync);</script>
+</body>
+</html>

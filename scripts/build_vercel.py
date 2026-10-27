@@ -28,6 +28,17 @@ def main():
         published = public / path.relative_to(source)
         if not published.is_file() or published.read_bytes() != path.read_bytes():
             raise RuntimeError(f"Missing or outdated CDN asset: {published}")
+    for public_path, source_path in (
+        (root / "public/frangi/index.html", root / "Frangi/frangi.html"),
+        (root / "public/frangi/bridge.html", root / "Frangi/bridge.html"),
+    ):
+        if not public_path.is_file() or public_path.read_bytes() != source_path.read_bytes():
+            raise RuntimeError(f"Missing or outdated Frangi asset: {public_path}")
+    import zipfile
+    bundle = root / "public/descargas/Frangi-sincronizado.zip"
+    with zipfile.ZipFile(bundle) as archive:
+        if archive.testzip() is not None or archive.read("frangi.html") != (root / "Frangi/frangi.html").read_bytes():
+            raise RuntimeError("The Frangi download does not match the published calendar.")
     print(f"Validated {len(assets)} shared static assets.")
 
 

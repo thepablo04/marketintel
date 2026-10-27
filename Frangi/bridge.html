@@ -1,0 +1,28 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Frangi Sync</title><script>
+// This page is hosted beside /sync/data so a local file can use the existing
+// authenticated API without relaxing CORS for every opaque web origin.
+window.addEventListener('message', async event => {
+  if (event.source !== parent || !event.data || event.data.channel !== 'frangi-sync-v1') return;
+  const {id, method, authorization, condition, envelope} = event.data;
+  if (!/^[A-Za-z0-9_-]{22}$/.test(id) || !['GET','PUT'].includes(method) ||
+      !/^Bearer [A-Za-z0-9_-]{43}$/.test(authorization)) return;
+  const target = event.origin === 'null' ? '*' : event.origin;
+  try {
+    const headers = {Authorization: authorization};
+    let body;
+    if (method === 'PUT') {
+      if (!condition || !['X-Sync-If-Match','X-Sync-If-None-Match'].includes(condition.name) ||
+          typeof condition.value !== 'string' || condition.value.length > 256 ||
+          !envelope || JSON.stringify(envelope).length > 3000000) return;
+      headers['Content-Type'] = 'application/json';
+      headers[condition.name] = condition.value;
+      body = JSON.stringify(envelope);
+    }
+    const response = await fetch('/sync/data', {method, headers, body, cache:'no-store', credentials:'omit', referrerPolicy:'no-referrer'});
+    const text = await response.text();
+    event.source.postMessage({channel:'frangi-sync-v1',id,status:response.status,body:text.slice(0,3000000)}, target);
+  } catch (_) {
+    event.source.postMessage({channel:'frangi-sync-v1',id,status:503,body:'{"code":"unavailable"}'}, target);
+  }
+});
+</script></html>
