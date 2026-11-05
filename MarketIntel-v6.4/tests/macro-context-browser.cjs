@@ -60,7 +60,7 @@ async function install(context,control) {
     let data={};
     if(url.pathname==='/macro'){control.requests++;data=control.snapshot;}
     else if(url.pathname==='/health')data={status:'ok',service:'MarketIntel',version:'6.4.5'};
-    else if(url.pathname==='/news')data={status:'ok',articles:[],updated_at:stamp};
+    else if(url.pathname==='/news'){control.newsRequests++;data={status:'ok',articles:[],updated_at:stamp};}
     else if(url.pathname==='/market-sentiment')data=pulse;
     else if(url.pathname==='/batch')data=Object.fromEntries((request.postDataJSON()?.tickers||[]).map(ticker=>[ticker,{ticker,name:ticker,price:100,change:0,change_pct:0,currency:'USD',spark_prices:[99,100]}]));
     else if(url.pathname.startsWith('/history/'))data={dates:[before,first,latest],prices:[99,100,101]};
@@ -82,13 +82,26 @@ async function refresh(page,control,snapshot) {
  const browser=await chromium.launch({executablePath:process.env.MARKETINTEL_CHROMIUM||'/usr/bin/chromium',args:['--no-sandbox','--disable-dev-shm-usage']});
  try {
   const context=await browser.newContext({viewport:{width:1280,height:900},reducedMotion:'reduce'});
-  const control={snapshot:macro(),requests:0};await install(context,control);
+  const control={snapshot:macro(),requests:0,newsRequests:0};
+  control.snapshot.series.pmi={...control.snapshot.series.pmi,label:'ISM manufacturero',source:'ISM · comunicado en PR Newswire',published_at:stamp,publication_date_status:'verified'};
+  await install(context,control);
   const page=await context.newPage(),errors=[];page.setDefaultTimeout(15000);
   page.on('pageerror',error=>errors.push(error.message));
   await page.goto(origin,{waitUntil:'networkidle'});
   await page.waitForFunction(()=>window.MarketIntelMacroContext&&window.MarketIntelSyncUI);
   await page.locator('.sidebar [data-target="indicadores"]').click();
   await page.locator('#sec-indicadores').waitFor({state:'visible'});
+  assert.equal(await page.locator('.mi-news-block,#market-news-title').count(),0);
+  await page.locator('[data-tab="pmi"]').click();
+  const pmi=page.locator('#ind-pmi .mi-macro-context');
+  await pmi.waitFor({state:'visible'});
+  assert.match(await page.locator('#macro-pmi-current').innerText(),/49/);
+  assert.match(await pmi.innerText(),/49 puntos/);
+  await pmi.locator('[data-macro-context-key="pmi"] summary').click();
+  assert.match(await pmi.innerText(),/51 puntos/,'ISM explains the comparison with its previous reading');
+  const pmiCard=page.locator('.mi-macro-card').filter({has:page.locator('span',{hasText:'ISM manufacturero'})});
+  assert.match(await pmiCard.innerText(),/PR Newswire/);
+  assert.doesNotMatch(await pmiCard.innerText(),/fecha no suministrada/,'The verified publication date is displayed');
   await page.locator('[data-tab="nfp"]').click();
   const example=page.locator('#ind-nfp .mi-macro-context');
   await example.waitFor({state:'visible'});
@@ -129,6 +142,7 @@ async function refresh(page,control,snapshot) {
   await page.locator('[data-sync-close]').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('marketbot_apikey')),'macro-fixture-private-key');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('pf_transactions_macro_fixture')).length),1);
+  assert.equal(control.newsRequests,0,'Opening and refreshing Pulso macro must not request removed news');
   assert.deepEqual(errors,[],'App must not produce uncaught errors');
   console.log('Macro browser passed: app boot, refresh/new period/correction, stale and absent states, mobile widths, safe rendering, portfolio and synchronization.');
   await context.close();

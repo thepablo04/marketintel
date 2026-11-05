@@ -8,6 +8,7 @@ no se ha configurado una clave para su API.
 
 import csv
 import io
+import json
 import math
 import re
 import time
@@ -15,6 +16,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
+from html.parser import HTMLParser
+from urllib.parse import urljoin, urlsplit
 from xml.etree import ElementTree
 
 
@@ -534,10 +537,10 @@ def _enrich_macro_item(key, item, baseline=None):
     item['publication_date_status'] = 'verified' if item.get('published_at') else 'unavailable'
     item.setdefault('fetched_at', None)
     publisher, release_url = _MACRO_PUBLICATIONS.get(key, (item.get('source'), item.get('source_url')))
-    item['publisher'] = publisher
+    item['publisher'] = item.get('publisher') or publisher
     item['release_url'] = release_url
     item['publication_source_url'] = release_url
-    item['release_url_kind'] = 'latest_release_or_series_page'
+    item.setdefault('release_url_kind', 'latest_release_or_series_page')
     item['consensus'] = None
     item['consensus_status'] = 'not_connected'
     item['market_reaction'] = None
@@ -767,7 +770,7 @@ def fetch_michigan_sentiment_snapshot(requests_module):
     }
 
 
-def fetch_ism_snapshot(requests_module, services=False):
+def _fetch_ism_direct_snapshot(requests_module, services=False):
     """Read a verified month/year from the official ISM report itself."""
     sector = 'Services' if services else 'Manufacturing'
     route = 'services' if services else 'pmi'
@@ -775,7 +778,9 @@ def fetch_ism_snapshot(requests_module, services=False):
     now = datetime.now(timezone.utc)
     candidates = []
     failures = []
-    for offset in range(0, 2 if services else 4):
+    # Try the latest completed month first. A public syndicated release may
+    # already be available when this page requires a login or still has old data.
+    for offset in range(1):
         month = now.month - 1 - offset
         year = now.year
         while month <= 0:
@@ -788,7 +793,7 @@ def fetch_ism_snapshot(requests_module, services=False):
         url = f'https://www.ismworld.org/supply-management-news-and-reports/reports/ism-pmi-reports/{route}/{month_name}/'
         try:
             page = _cached_text(requests_module, url, timeout=5)
-            page_text = _page_text(page).replace('®', '').replace('™', '')
+            page_text = _ism_text(page)
             # Month-only URLs are reused by ISM. Require a matching report
             # month AND year in the document, not the guessed URL period.
             report = re.search(r'\b' + month_name + r'\s+' + str(year) + r'\s+(?:ISM\s+)?' + sector + r'\s+PMI\s+Report\b', page_text, re.I)
@@ -826,6 +831,154 @@ def fetch_ism_snapshot(requests_module, services=False):
             failures.append(_safe_error(exc))
             continue
     raise ValueError(identifier + ': ' + ('; '.join(sorted(set(failures))) if failures else 'mes, año o PMI del informe no verificables'))
+
+
+def _ism_text(value):
+    # Some publisher responses omit an HTTP charset although their HTML is
+    # UTF-8. Normalize only trademark artifacts, not numeric data or dates.
+    return re.sub(r'\s+', ' ', _page_text(value).replace('Â®', '').replace('Â™', '').replace('®', '').replace('™', '')).strip()
+
+
+class _ISMReleaseHTML(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.meta = {}
+        self.links = []
+        self.schemas = []
+        self._schema = None
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == 'meta':
+            self.meta[attrs.get('name', attrs.get('property', '')).lower()] = attrs.get('content', '')
+        elif tag == 'a' and attrs.get('href'):
+            self.links.append(attrs['href'])
+        elif tag == 'script' and attrs.get('type', '').lower() == 'application/ld+json':
+            self._schema = []
+
+    def handle_data(self, data):
+        if self._schema is not None:
+            self._schema.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == 'script' and self._schema is not None:
+            try:
+                self.schemas.append(json.loads(''.join(self._schema)))
+            except (ValueError, TypeError):
+                pass
+            self._schema = None
+
+
+def _parse_ism_wire_release(page, url, period, services=False):
+    """Verify the issuer, report, value and timestamp of ISM's own release."""
+    sector = 'Services' if services else 'Manufacturing'
+    doc = _ISMReleaseHTML()
+    doc.feed(page)
+    if _ism_text(doc.meta.get('author', '')).casefold() != 'institute for supply management':
+        raise ValueError('ISM: autor del comunicado no verificable')
+    month = _MONTH_NAMES[int(period[5:7]) - 1]
+    pattern = (sector + r'\s+PMI\s+at\s+(\d+(?:\.\d+)?)\s*%;?\s*'
+               + month + r'\s+' + period[:4] + r'\s+ISM\s+' + sector + r'\s+PMI\s+Report')
+    article = None
+    headline = None
+    for candidate in doc.schemas:
+        if not isinstance(candidate, dict) or candidate.get('@type') != 'NewsArticle':
+            continue
+        title = re.fullmatch(pattern, _ism_text(candidate.get('headline', '')), re.I)
+        identity = candidate.get('mainEntityOfPage')
+        identity = identity.get('@id') if isinstance(identity, dict) else identity
+        if title and identity == url:
+            article, headline = candidate, title
+            break
+    if not article:
+        raise ValueError('ISM: sector, mes, año o URL del comunicado no verificables')
+    value = float(headline.group(1))
+    published = datetime.fromisoformat(str(article.get('datePublished', '')).replace('Z', '+00:00'))
+    period_end = datetime.fromisoformat(_shift_month(period, 1)).replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    if not 0 <= value <= 100 or published.tzinfo is None or not period_end <= published <= now:
+        raise ValueError('ISM: valor o fecha de publicación no verificables')
+    if published > period_end + timedelta(days=60):
+        raise ValueError('ISM: fecha de publicación incompatible con el período')
+    text = _ism_text(re.sub(r'<(script|style)\b[^>]*>.*?</\1>', ' ', page, flags=re.S | re.I))
+    registrations = list(re.finditer(sector + r'\s+PMI\s+registered\s+(\d+(?:\.\d+)?)\s+percent', text, re.I))
+    if not registrations or float(registrations[0].group(1)) != value:
+        raise ValueError('ISM: la cifra del titular no coincide con el cuerpo del comunicado')
+    history = []
+    previous_period = _shift_month(period, -1)
+    previous_month = _MONTH_NAMES[int(previous_period[5:7]) - 1]
+    for match in registrations:
+        if float(match.group(1)) != value:
+            continue
+        # Only read the same sentence about this PMI, never another component
+        # such as New Orders or Prices further down the report.
+        sentence = re.split(r'\.(?!\d)|(?<!\d)\.', text[match.start():match.start()+650], maxsplit=1)[0]
+        prior = re.search(r'\b' + previous_month + r"(?:'s)?\s+(?:figure|reading)(?:\s+of)?\s+(\d+(?:\.\d+)?)\s+percent", sentence, re.I)
+        if prior and 0 <= float(prior.group(1)) <= 100:
+            history.append({'date': previous_period, 'value': float(prior.group(1)),
+                            'display_value': float(prior.group(1)), 'display_unit': 'index'})
+            break
+    history.append({'date': period, 'value': value, 'display_value': value, 'display_unit': 'index'})
+    return {
+        'id': 'ISM-SERVICES' if services else 'ISM-PMI',
+        'label': 'ISM de servicios' if services else 'ISM manufacturero',
+        'unit': 'index', 'value': value, 'display_value': value,
+        'display_unit': 'index', 'date': period, 'history': history,
+        'source': 'ISM · comunicado en PR Newswire', 'publisher': 'ISM',
+        'source_url': url, 'release_url_kind': 'specific_release',
+        'fetched_at': _source_fetched_at(url),
+        'published_at': published.astimezone(timezone.utc).isoformat(),
+    }
+
+
+def _fetch_ism_wire_snapshot(requests_module, services=False):
+    sector = 'services' if services else 'manufacturing'
+    base = 'https://www.prnewswire.com'
+    search = base + '/search/news/?keyword=ISM%20' + sector.capitalize() + '%20PMI'
+    doc = _ISMReleaseHTML()
+    doc.feed(_cached_text(requests_module, search, ttl=300, timeout=6))
+    now = datetime.now(timezone.utc).date().isoformat()
+    allowed = {_shift_month(now, -offset) for offset in range(1, 5)}
+    candidates = set()
+    pattern = (r'/news-releases/' + sector + r'-pmi-at-[0-9-]+-('
+               + '|'.join(_MONTH_NAMES) + r')-(20\d{2})-ism-' + sector + r'-pmi-report-\d+\.html')
+    for link in doc.links:
+        url = urljoin(base, link)
+        parsed = urlsplit(url)
+        if parsed.scheme != 'https' or parsed.netloc != 'www.prnewswire.com' or parsed.query or parsed.fragment:
+            continue
+        match = re.fullmatch(pattern, parsed.path)
+        if match:
+            try:
+                period = _published_month(match.group(1), match.group(2))
+            except ValueError:
+                continue
+            if period in allowed:
+                candidates.add((period, url))
+    failures = []
+    newest_period = max((period for period, _ in candidates), default=None)
+    for period, url in sorted(candidates, reverse=True)[:3]:
+        try:
+            item = _parse_ism_wire_release(_cached_text(requests_module, url, ttl=300, timeout=6), url, period, services)
+            if period != newest_period:
+                item['period_warning'] = 'Hay un comunicado posterior listado que no se pudo verificar; esta lectura anterior no confirma el contexto actual.'
+            return item
+        except Exception as exc:
+            failures.append(_safe_error(exc))
+    raise ValueError('ISM: comunicado público no verificable' + ('; '+', '.join(failures) if failures else ''))
+
+
+def fetch_ism_snapshot(requests_module, services=False):
+    """Use the publisher, or its publicly distributed release if access fails."""
+    try:
+        return _fetch_ism_direct_snapshot(requests_module, services)
+    except Exception:
+        pass
+    try:
+        return _fetch_ism_wire_snapshot(requests_module, services)
+    except Exception as exc:
+        prefix = 'ISM-SERVICES' if services else 'ISM-PMI'
+        raise ValueError(prefix + ': comunicado oficial no verificable; ' + _safe_error(exc)) from exc
 
 
 def fetch_fred_snapshot(requests_module, api_key):

@@ -1,5 +1,11 @@
 # MarketIntel local · versión 6.4
 
+## Corrección de ISM y Pulso macro · 6.4.6
+
+Se retiró **Noticias actuales del mercado** de Pulso macro. Los indicadores y sus ejemplos mantienen la actualización automática.
+
+Cuando la página de ISM requiere acceso, se consulta el comunicado público del propio Institute for Supply Management en PR Newswire. La consulta descubre cada nuevo informe y comprueba el autor, el sector, el mes, el año, la cifra y la fecha de publicación. Incluye la lectura anterior cuando aparece en el mismo comunicado. Si no se puede verificar, se conserva la advertencia de dato no confirmado. Funciona en local y en web con la configuración existente, sin otra clave API.
+
 ## Ejemplos macro actualizados · 6.4.5
 
 En **Pulso macro**, cada indicador conserva su explicación y añade un ejemplo calculado con las últimas observaciones disponibles, su comparación y sus posibles implicaciones para la Fed, acciones, bonos y dólar. Los ejemplos históricos quedan desplegables y separados del contexto vigente. La síntesis conecta inflación, empleo y actividad; los datos antiguos o sin verificar quedan fuera de esa lectura.

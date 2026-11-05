@@ -415,23 +415,10 @@ setTimeout(function(){
   </div>
   <div class="mi-macro-toolbar">
     <span id="macro-updated">Esperando datos oficiales…</span>
-    <button type="button" onclick="refreshMacroAndNews()">↻ Actualizar ahora</button>
+    <button type="button" onclick="loadMacroSnapshot({force:true})">↻ Actualizar ahora</button>
   </div>
 
   <div id="macro-context-summary"><p>El contexto se prepara con las últimas observaciones que respondan las fuentes.</p></div>
-
-  <section class="mi-news-block" aria-labelledby="market-news-title">
-    <div class="mi-news-head">
-      <div>
-        <div class="sec-eyebrow" style="color:var(--accent2)">Yahoo Finance · respaldo RSS · actualización cada 5 minutos</div>
-        <h2 id="market-news-title">Noticias actuales del mercado</h2>
-      </div>
-      <span id="news-updated">Cargando…</span>
-    </div>
-    <div id="market-news" class="mi-news-grid" aria-live="polite">
-      <div class="mi-news-empty">Buscando los titulares más recientes…</div>
-    </div>
-  </section>
 
   <section class="mi-live-signal" aria-labelledby="macro-signal-title">
     <div class="sec-eyebrow" style="color:var(--green)">Lectura automática · basada en los últimos datos disponibles</div>
@@ -1880,7 +1867,6 @@ function go(id){
   if(bc) bc.textContent = BC_NAMES[id] || id;
   if(id==='indicadores'){
     loadMacroSnapshot();
-    loadMarketNews();
     if(!window.indTabInitDone){ window.indTabInitDone=true; initChartFed(); }
   }
   document.dispatchEvent(new CustomEvent('sectionChanged', {detail: id}));
@@ -1944,15 +1930,10 @@ function buildMobileNav(){
 let macroSnapshotCache = null;
 let macroSnapshotPromise = null;
 let macroSnapshotAt = 0;
-let marketNewsCache = null;
-let marketNewsPromise = null;
-let marketNewsAt = 0;
 let tickerRefreshInterval = null;
 let macroRefreshInterval = null;
-let newsRefreshInterval = null;
 let macroLifecycleBound = false;
 const MACRO_BROWSER_CACHE_MS = 5 * 60 * 1000;
-const NEWS_BROWSER_CACHE_MS = 5 * 60 * 1000;
 
 async function requestMacroSnapshot(force=false){
   const fresh = macroSnapshotCache && (Date.now() - macroSnapshotAt < MACRO_BROWSER_CACHE_MS);
@@ -2086,69 +2067,6 @@ function escapeNewsText(value){
   return String(value ?? '').replace(/[&<>"']/g, char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 }
 
-function safeNewsURL(value){
-  try{
-    const url = new URL(value);
-    return ['https:','http:'].includes(url.protocol) ? url.href : '#';
-  }catch{return '#';}
-}
-
-function newsAge(value){
-  const date = new Date(value);
-  if(Number.isNaN(date.getTime())) return 'Fecha no disponible';
-  const minutes = Math.max(0, Math.round((Date.now()-date.getTime())/60000));
-  if(minutes < 60) return `Hace ${Math.max(1,minutes)} min`;
-  const hours = Math.floor(minutes/60);
-  if(hours < 24) return `Hace ${hours} h`;
-  return date.toLocaleDateString('es-DO',{day:'2-digit',month:'short',year:'numeric'});
-}
-
-async function requestMarketNews(force=false){
-  const fresh = marketNewsCache && Date.now()-marketNewsAt < NEWS_BROWSER_CACHE_MS;
-  if(!force && fresh) return marketNewsCache;
-  if(marketNewsPromise) return marketNewsPromise;
-  marketNewsPromise = fetchJSONRetry('/news', {timeout:30000}, 2).then(data=>{
-    marketNewsCache=data;
-    marketNewsAt=Date.now();
-    return data;
-  });
-  try{return await marketNewsPromise;}finally{marketNewsPromise=null;}
-}
-
-function renderMarketNews(data){
-  const host=document.getElementById('market-news');
-  const updated=document.getElementById('news-updated');
-  if(!host) return;
-  const articles=Array.isArray(data?.articles)?data.articles:[];
-  if(data?.status==='ok' && articles.length){
-    host.innerHTML=articles.map(article=>{
-      const tickers=(article.related_tickers||[]).slice(0,4).map(t=>`<span>${escapeNewsText(t)}</span>`).join('');
-      return `<a class="mi-news-card" href="${safeNewsURL(article.url)}" target="_blank" rel="noopener noreferrer"><small>${escapeNewsText(article.publisher)} · ${newsAge(article.published_at)}</small><strong>${escapeNewsText(article.title)}</strong>${tickers?`<div>${tickers}</div>`:''}</a>`;
-    }).join('');
-    if(updated) updated.textContent=`${data.source||'Noticias'} · actualizado ${formatLocalDateTime(data.updated_at)}`;
-  }else{
-    host.innerHTML='<div class="mi-news-empty">Yahoo Finance no devolvió noticias en este momento. La aplicación reintentará automáticamente.</div>';
-    if(updated) updated.textContent='Sin noticias nuevas';
-  }
-}
-
-async function loadMarketNews(options={}){
-  const host=document.getElementById('market-news');
-  if(host && !marketNewsCache) host.innerHTML='<div class="mi-news-empty">Buscando los titulares más recientes…</div>';
-  try{
-    const data=await requestMarketNews(options.force===true);
-    renderMarketNews(data);
-    return data;
-  }catch{
-    if(host) host.innerHTML='<div class="mi-news-empty warn">No se pudieron actualizar las noticias. Reintentaremos en 5 minutos.</div>';
-    return null;
-  }
-}
-
-async function refreshMacroAndNews(){
-  await Promise.all([loadMacroSnapshot({force:true}),loadMarketNews({force:true})]);
-}
-
 // ===== TICKER =====
 function buildTicker(){
   // Load saved tickers or use defaults
@@ -2215,20 +2133,16 @@ function buildTicker(){
   // Auto-refresh every 60 seconds
   if(tickerRefreshInterval) clearInterval(tickerRefreshInterval);
   if(macroRefreshInterval) clearInterval(macroRefreshInterval);
-  if(newsRefreshInterval) clearInterval(newsRefreshInterval);
   tickerRefreshInterval = setInterval(fetchTickerBar, 60000);
   macroRefreshInterval = setInterval(()=>loadMacroSnapshot({force:true}), 300000);
-  newsRefreshInterval = setInterval(()=>loadMarketNews({force:true}), 300000);
-  loadMarketNews();
 
   if(!macroLifecycleBound){
     macroLifecycleBound = true;
-    window.addEventListener('online', ()=>refreshMacroAndNews());
-    window.addEventListener('pageshow', ()=>{loadMacroSnapshot();loadMarketNews();});
+    window.addEventListener('online', ()=>loadMacroSnapshot({force:true}));
+    window.addEventListener('pageshow', ()=>loadMacroSnapshot());
     document.addEventListener('visibilitychange', ()=>{
       if(!document.hidden){
         loadMacroSnapshot({force:true});
-        if(document.getElementById('sec-indicadores')?.classList.contains('active')) loadMarketNews();
       }
     });
   }
