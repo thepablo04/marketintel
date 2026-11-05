@@ -62,7 +62,7 @@ class PublicFredTests(unittest.TestCase):
              patch.object(data, '_cached_json_retry') as api:
             result = data.fetch_fred_snapshot(object(), '')
         api.assert_not_called()
-        self.assertEqual(public.call_count, 9)
+        self.assertEqual(public.call_count, len(data.FRED_SERIES) - 2)  # Both ISM reports use their publisher.
         self.assertEqual(result['series']['payrolls']['display_value'], 5)
         for name in ('gdp', 'cpi', 'core_pce'):
             item = result['series'][name]
@@ -84,7 +84,7 @@ class PublicFredTests(unittest.TestCase):
              }) as api:
             result = data.fetch_fred_snapshot(object(), 'fixture-key')
         public.assert_not_called()
-        self.assertEqual(api.call_count, 9)
+        self.assertEqual(api.call_count, len(data.FRED_SERIES) - 2)
         self.assertEqual(result['series']['fed_upper']['display_value'], 4)
 
     def test_no_key_public_failure_stays_unavailable(self):

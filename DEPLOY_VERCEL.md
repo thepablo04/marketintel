@@ -46,6 +46,8 @@ El plan Hobby tiene cuotas limitadas de Blob; si se agotan, la sincronización q
 
 ## Fuentes y MarketBot
 
+La versión 6.4.5 añade contexto educativo que se vuelve a calcular al recibir `/macro`. El navegador consulta al abrir, cada cinco minutos, al volver a la pestaña, al recuperar conexión y bajo demanda. No añade cron ni trabajadores permanentes en Vercel. Las respuestas conservan el período, las unidades y los estados de vigencia; la fecha de consulta no sustituye la de publicación. Los ejemplos no consumen una API de IA ni modifican las claves existentes. El ZIP actual se genera en `public/descargas/MarketIntel-6.4.5.zip`; el enlace 6.4.4 se conserva para instalaciones anteriores.
+
 Yahoo Finance y las fuentes públicas mantienen sus conexiones originales. FRED usa su descarga CSV oficial cuando no hay clave; si configuras `FRED_API_KEY`, conserva la API como fuente preferida. `FMP_API_KEY` y `SEC_USER_AGENT` permiten habilitar fuentes adicionales. Configura estas variables en el entorno correspondiente de Vercel y vuelve a publicar después de cambiarlas.
 
 MarketBot conserva el campo para introducir tu propia clave del proveedor en la interfaz. Las copias JSON excluyen las claves, por lo que tendrás que introducirla también al usar un dominio nuevo. No se incluye una clave compartida en el despliegue.

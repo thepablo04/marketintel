@@ -315,6 +315,8 @@ canvas{max-height:220px;}
 <link rel="stylesheet" href="/static/marketintel-pages.css?v=6.4.2">
 <link rel="stylesheet" href="/static/portfolio-polish.css?v=6.4.2">
 <link rel="stylesheet" href="/static/sync-ui.css?v=6.4.4">
+<link rel="stylesheet" href="/static/macro-context.css?v=6.4.5">
+<script src="/static/macro-context.js?v=6.4.5"></script>
 </head>
 <body>
 <button id="theme-toggle-btn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
@@ -405,7 +407,7 @@ setTimeout(function(){
 <!-- ======================== INDICADORES ======================== -->
 <!-- ======================== INDICADORES (UNIFICADO) ======================== -->
 <section id="sec-indicadores" class="section">
-  <div class="sec-eyebrow" style="color:var(--accent)">Macro · Los 8 indicadores que mueven el mercado</div>
+  <div class="sec-eyebrow" style="color:var(--accent)">Macro · Datos y contexto de cada publicación</div>
   <div class="sec-title">Indicadores<br>Económicos</div>
   <p class="sec-desc">Todo en un solo lugar — selecciona el indicador que quieres revisar. FED, inflación, empleo, crecimiento y sentimiento del consumidor.</p>
   <div id="macro-live" class="mi-macro-live">
@@ -415,6 +417,8 @@ setTimeout(function(){
     <span id="macro-updated">Esperando datos oficiales…</span>
     <button type="button" onclick="refreshMacroAndNews()">↻ Actualizar ahora</button>
   </div>
+
+  <div id="macro-context-summary"><p>El contexto se prepara con las últimas observaciones que respondan las fuentes.</p></div>
 
   <section class="mi-news-block" aria-labelledby="market-news-title">
     <div class="mi-news-head">
@@ -440,15 +444,15 @@ setTimeout(function(){
   <!-- ===== RELACIÓN ENTRE INDICADORES (fusionado aquí) ===== -->
   <button onclick="toggleDiagramIntro()" id="diagram-toggle-btn" style="display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1.1rem;color:var(--accent2);font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;margin-bottom:1.5rem;width:100%;text-align:left;">
     <span id="diagram-toggle-icon" style="font-size:13px;transition:transform 0.2s;display:inline-block;">▸</span>
-    <span>Ver cómo se relacionan estos indicadores entre sí (causa → efecto → bolsa)</span>
+    <span>Ver cómo se relacionan estos indicadores y qué puede cambiar su efecto</span>
   </button>
   <div id="diagram-intro" style="display:none;margin-bottom:2rem;">
   <div class="diagram-wrap">
-    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;">Cadena de transmisión monetaria</div>
-    <div class="flow-row"><div class="flow-node trigger">Inflación alta<br><small style="font-size:10px;opacity:0.7">CPI/PCE &gt; 3%</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED sube tasas<br><small style="font-size:10px;opacity:0.7">Reunión FOMC</small></div><div class="flow-arrow">→</div><div class="flow-node action">Crédito caro<br><small style="font-size:10px;opacity:0.7">Hipotecas, bonos</small></div><div class="flow-arrow">→</div><div class="flow-node result-bad">Bolsa cae<br><small style="font-size:10px;opacity:0.7">Valuaciones bajan</small></div></div>
-    <div class="flow-row" style="margin-top:1.5rem;"><div class="flow-node trigger" style="border-color:rgba(0,255,157,0.4);background:rgba(0,255,157,0.06);color:var(--green)">Inflación baja<br><small style="font-size:10px;opacity:0.7">CPI/PCE → 2%</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED baja tasas<br><small style="font-size:10px;opacity:0.7">Pivote monetario</small></div><div class="flow-arrow">→</div><div class="flow-node action">Crédito barato<br><small style="font-size:10px;opacity:0.7">Expansión empresarial</small></div><div class="flow-arrow">→</div><div class="flow-node result">Bolsa sube<br><small style="font-size:10px;opacity:0.7">Valuaciones suben</small></div></div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1.5rem;">Canales posibles de transmisión monetaria; dependen del contexto</div>
+    <div class="flow-row"><div class="flow-node trigger">Inflación alta<br><small style="font-size:10px;opacity:0.7">Persistencia y expectativas</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED puede mantener o subir<br><small style="font-size:10px;opacity:0.7">Reunión FOMC</small></div><div class="flow-arrow">→</div><div class="flow-node action">Crédito caro<br><small style="font-size:10px;opacity:0.7">Hipotecas, bonos</small></div><div class="flow-arrow">→</div><div class="flow-node result-bad">Presión sobre valuaciones<br><small style="font-size:10px;opacity:0.7">Mayor tasa de descuento</small></div></div>
+    <div class="flow-row" style="margin-top:1.5rem;"><div class="flow-node trigger" style="border-color:rgba(0,255,157,0.4);background:rgba(0,255,157,0.06);color:var(--green)">Inflación baja<br><small style="font-size:10px;opacity:0.7">CPI/PCE → 2%</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED puede recortar<br><small style="font-size:10px;opacity:0.7">Pivote monetario</small></div><div class="flow-arrow">→</div><div class="flow-node action">Crédito barato<br><small style="font-size:10px;opacity:0.7">Expansión empresarial</small></div><div class="flow-arrow">→</div><div class="flow-node result">Apoyo a valuaciones<br><small style="font-size:10px;opacity:0.7">Menor tasa de descuento</small></div></div>
     <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin:2rem 0 1.5rem;">Cadena empleo → inflación → FED</div>
-    <div class="flow-row"><div class="flow-node trigger">NFP muy alto<br><small style="font-size:10px;opacity:0.7">&gt;300K empleos</small></div><div class="flow-arrow">→</div><div class="flow-node action">Salarios suben<br><small style="font-size:10px;opacity:0.7">Avg Hourly Earnings</small></div><div class="flow-arrow">→</div><div class="flow-node trigger">Inflación sube<br><small style="font-size:10px;opacity:0.7">Más gasto</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED hawkish<br><small style="font-size:10px;opacity:0.7">No recorta</small></div><div class="flow-arrow">→</div><div class="flow-node result-bad">Bolsa presionada</div></div>
+    <div class="flow-row"><div class="flow-node trigger">Empleo fuerte<br><small style="font-size:10px;opacity:0.7">Junto con salarios y vacantes</small></div><div class="flow-arrow">→</div><div class="flow-node action">Posible presión salarial<br><small style="font-size:10px;opacity:0.7">Avg Hourly Earnings</small></div><div class="flow-arrow">→</div><div class="flow-node trigger">Riesgo de inflación<br><small style="font-size:10px;opacity:0.7">Más gasto</small></div><div class="flow-arrow">→</div><div class="flow-node action">FED hawkish<br><small style="font-size:10px;opacity:0.7">Valora ambos mandatos</small></div><div class="flow-arrow">→</div><div class="flow-node result-bad">Efecto mixto sobre bolsa</div></div>
     <div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin:2rem 0 1.5rem;">Indicadores adelantados vs rezagados</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
       <div class="card"><div class="sc-badge" style="color:var(--accent)">Adelantados</div><div style="font-size:12px;color:var(--muted);line-height:1.7;margin-top:6px;">PMI<br>Confianza del consumidor<br>Curva de rendimientos<br>Nuevos pedidos</div></div>
@@ -473,32 +477,32 @@ setTimeout(function(){
 <div id="ind-fed" class="ind-panel active">
   <div class="sec-eyebrow" style="color:var(--accent)">Política monetaria · 8 veces al año</div>
   <div class="sec-title">Tasas de<br>Interés FED</div>
-  <p class="sec-desc">El instrumento más poderoso de la política monetaria. Una decisión que mueve billones de dólares en segundos.</p>
+  <p class="sec-desc">El rango objetivo que guía el costo del dinero. Importan la decisión, el comunicado y lo que el mercado esperaba.</p>
   <div class="stat-row">
     <div class="stat"><div class="stat-label">Tasa actual</div><div class="stat-val" id="fed-current-rate">Cargando…</div></div>
     <div class="stat"><div class="stat-label">Subidas 2022–23</div><div class="stat-val">+525 pb</div></div>
     <div class="stat"><div class="stat-label">Meta inflación</div><div class="stat-val">2.0%</div></div>
     <div class="stat"><div class="stat-label">Reuniones/año</div><div class="stat-val">8 (FOMC)</div></div>
   </div>
-  <div class="def-box">La FED establece la <strong>tasa de fondos federales</strong>: el interés al que los bancos se prestan dinero overnight. Aunque parezca un número técnico, tiene un efecto dominó sobre hipotecas, bonos corporativos, valuaciones de empresas y el tipo de cambio del dólar. Es literalmente el "precio del dinero" en todo el mundo.</div>
+  <div class="def-box">El FOMC establece un <strong>rango objetivo para la tasa de fondos federales</strong>, vinculada al préstamo de reservas bancarias a un día. Ese rango influye en el crédito, los rendimientos de los bonos, las valuaciones y el dólar. El efecto depende también de la inflación, el crecimiento y las expectativas; no todas las tasas cambian en la misma proporción.</div>
   <div class="sec-divider">Impacto en la bolsa</div>
   <div class="scenarios">
-    <div class="sc bull"><div class="sc-badge">▲ Alcista</div><div class="sc-title">FED baja tasas (Dovish)</div><div class="sc-body">El crédito se abarata, las empresas se expanden, las ganancias futuras valen más hoy. Las acciones tech y growth lideran. Los bonos existentes suben de precio. El dólar se debilita.</div></div>
-    <div class="sc bear"><div class="sc-badge">▼ Bajista</div><div class="sc-title">FED sube tasas (Hawkish)</div><div class="sc-body">El dinero se encarece, las valuaciones se comprimen. Empresas con P/E alto (como NVIDIA) pierden más. Los bonos del Tesoro se vuelven más atractivos vs acciones. El dólar se fortalece.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ Posible apoyo</div><div class="sc-title">Recortes y menor restricción</div><div class="sc-body">Un recorte puede abaratar el crédito y aumentar el valor presente de las ganancias futuras. Si responde a una recesión, el deterioro de beneficios puede pesar más en la bolsa. Si bajan los rendimientos, los bonos de pagos fijos existentes suben de precio. El dólar depende también de las tasas y riesgos en otros países.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ Posible presión</div><div class="sc-title">Subidas y mayor restricción</div><div class="sc-body">Un aumento inesperado puede encarecer el crédito y presionar las valuaciones, especialmente cuando los beneficios se esperan lejos en el futuro. Si suben los rendimientos, baja el precio de los bonos de pagos fijos existentes. El dólar puede fortalecerse si mejora el rendimiento relativo de los activos en dólares.</div></div>
   </div>
-  <div class="sec-divider">Impacto por sector</div>
+  <div class="sec-divider">Sensibilidad habitual por sector · no predice retornos</div>
   <table class="sector-table">
-    <thead><tr><th>Sector</th><th>Tasas suben</th><th>Tasas bajan</th><th>¿Por qué?</th></tr></thead>
+    <thead><tr><th>Sector</th><th>Si suben las tasas</th><th>Si bajan las tasas</th><th>¿Por qué?</th></tr></thead>
     <tbody>
-      <tr><td>Tecnología / Growth</td><td><span class="tag-dn">−− Muy negativo</span></td><td><span class="tag-up">++ Muy positivo</span></td><td>Valuaciones altas, ganancias lejanas se descuentan más</td></tr>
-      <tr><td>Bancos / Financiero</td><td><span class="tag-up">+ Positivo</span></td><td><span class="tag-dn">− Negativo</span></td><td>Margen de interés neto sube con tasas altas</td></tr>
-      <tr><td>Real Estate (REITs)</td><td><span class="tag-dn">−− Muy negativo</span></td><td><span class="tag-up">++ Muy positivo</span></td><td>Compiten con los bonos por rendimiento</td></tr>
-      <tr><td>Utilities / Dividendos</td><td><span class="tag-dn">− Negativo</span></td><td><span class="tag-up">+ Positivo</span></td><td>Similar a bonos: rendimiento relativo cambia</td></tr>
-      <tr><td>Consumo básico</td><td><span class="tag-neu">Neutro</span></td><td><span class="tag-neu">Neutro</span></td><td>Demanda inelástica, menos sensible a ciclo</td></tr>
+      <tr><td>Tecnología / Growth</td><td><span class="tag-dn">Mayor presión</span></td><td><span class="tag-up">Posible apoyo</span></td><td>Una tasa de descuento mayor reduce el valor presente de ganancias lejanas</td></tr>
+      <tr><td>Bancos / Financiero</td><td><span class="tag-up">Puede ayudar</span></td><td><span class="tag-dn">Posible presión</span></td><td>Depende del costo de depósitos, la curva y las pérdidas crediticias</td></tr>
+      <tr><td>Real Estate (REITs)</td><td><span class="tag-dn">Mayor presión</span></td><td><span class="tag-up">Posible apoyo</span></td><td>Compiten con los bonos por rendimiento</td></tr>
+      <tr><td>Utilities / Dividendos</td><td><span class="tag-dn">Posible presión</span></td><td><span class="tag-up">Puede ayudar</span></td><td>Similar a bonos: rendimiento relativo cambia</td></tr>
+      <tr><td>Consumo básico</td><td><span class="tag-neu">Menor sensibilidad</span></td><td><span class="tag-neu">Menor sensibilidad</span></td><td>Demanda inelástica, menos sensible a ciclo</td></tr>
     </tbody>
   </table>
   <div class="chart-wrap"><div class="chart-title">Tasa FED · historial oficial reciente</div><canvas id="chart-fed"></canvas></div>
-  <div class="example"><div class="example-ey">⬡ Ejemplo histórico — 2022–2024</div><div class="example-body">La FED subió tasas <strong>11 veces</strong> entre marzo 2022 y julio 2023 (+<span class="hn hn-r">525 pb</span>). El Nasdaq cayó <span class="hn hn-r">−32.5%</span> en 2022. NVIDIA perdió <span class="hn hn-r">−65%</span>. Cuando en agosto 2024 Powell anunció que "había llegado el momento de bajar tasas" en Jackson Hole, NVIDIA subió <span class="hn hn-g">+4.6%</span> ese mismo día. El S&P subió <span class="hn hn-g">+24%</span> en 2023 solo anticipando el pivote.</div></div>
+  <details class="example macro-history"><summary class="example-ey">Referencia histórica · el ciclo de tasas 2022–2024</summary><div class="example-body">Entre marzo de 2022 y julio de 2023, el rango objetivo pasó de 0–0.25% a 5.25–5.50%. En septiembre de 2024, el FOMC lo redujo 50 puntos básicos. Estos episodios muestran que la política cambia al evolucionar inflación, empleo y riesgos. No permiten atribuir todo el movimiento de una acción a una sola decisión. <a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20230726a.htm" target="_blank" rel="noopener noreferrer">Comunicado de julio de 2023</a> · <a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20240918a.htm" target="_blank" rel="noopener noreferrer">Comunicado de septiembre de 2024</a>.</div></details>
 </div>
 
 <!-- INFLATION -->
@@ -511,21 +515,21 @@ setTimeout(function(){
     <div class="stat"><div class="stat-label">Pico 2022</div><div class="stat-val">9.1%</div></div>
     <div class="stat"><div class="stat-label">CPI actual (YoY)</div><div class="stat-val" id="macro-inflation-current">Cargando…</div></div>
   </div>
-  <div class="def-box">La inflación mide cuánto más caro es comprar la misma canasta de bienes y servicios que el año pasado. Expressed como porcentaje anual. La FED tiene mandato dual: <strong>máximo empleo + precios estables</strong>. Cuando la inflación supera el 2%, la FED prioriza bajarla aunque eso implique frenar la economía.</div>
-  <div class="formula">Inflación alta → FED sube tasas → crédito caro → bolsa cae | Inflación baja → FED baja tasas → crédito barato → bolsa sube</div>
+  <div class="def-box">La inflación mide el cambio del nivel de precios. La variación <strong>mensual</strong> compara con el mes previo y la <strong>interanual</strong> con el mismo mes del año anterior. La FED busca <strong>máximo empleo y precios estables</strong>; su objetivo del 2% a largo plazo se refiere al PCE general. Una inflación que baja puede seguir siendo positiva: los precios suben, pero más lentamente.</div>
+  <div class="formula">Inflación persistente puede prolongar la restricción; una moderación sostenida puede dar margen para recortar. La reacción de la bolsa depende también del empleo, las ganancias y lo que ya esperaba el mercado.</div>
   <div class="scenarios">
-    <div class="sc bear"><div class="sc-badge">▼ Inflación > 3%</div><div class="sc-title">Entorno restrictivo</div><div class="sc-body">La FED actúa agresivamente. Los costos empresariales suben, los márgenes se comprimen. Típicamente bajista para la bolsa, especialmente growth y tech.</div></div>
-    <div class="sc bull"><div class="sc-badge">▲ Inflación ~2%</div><div class="sc-title">Entorno "Goldilocks"</div><div class="sc-body">La FED puede mantener o bajar tasas. Las empresas planifican mejor. El consumidor mantiene poder adquisitivo. Entorno ideal para la renta variable.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ Inflación > 3%</div><div class="sc-title">Entorno restrictivo</div><div class="sc-body">Una inflación persistente puede justificar tasas restrictivas. Los costos presionan a las empresas que no logran trasladarlos a sus precios, aunque el efecto varía por sector. El nivel aislado no determina una decisión de la FED.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ Inflación ~2%</div><div class="sc-title">Entorno "Goldilocks"</div><div class="sc-body">Una inflación estable cerca de la meta ayuda a planificar y reduce la pérdida de poder adquisitivo. Puede favorecer a las acciones si el empleo y los beneficios se sostienen; llegar a la meta por una contracción fuerte sería un contexto distinto.</div></div>
   </div>
   <div class="chart-wrap"><div class="chart-title">Inflación CPI YoY · historial oficial reciente</div><canvas id="chart-inflation"></canvas></div>
-  <div class="example"><div class="example-ey">⬡ El Gran Ciclo Inflacionario 2021–2024</div><div class="example-body">COVID + estímulos fiscales de <span class="hn hn-b">$5 billones</span> + ruptura de cadenas de suministro → inflación sube a <span class="hn hn-r">9.1%</span> en jun 2022. La FED sube tasas agresivamente. Para finales de 2023, la inflación baja a <span class="hn hn-g">3.1%</span> y el mercado rebota. Lección: <strong>la dirección importa más que el nivel</strong>.</div></div>
+  <details class="example macro-history"><summary class="example-ey">Referencia histórica · inflación de junio de 2022</summary><div class="example-body">El CPI general aumentó <strong>9.1% interanual en junio de 2022</strong>, según la publicación de BLS del 13 de julio de 2022. Una tasa menor en meses posteriores significa que los precios aumentaban más despacio, no que hubieran regresado a su nivel anterior. Esta referencia histórica ayuda a distinguir inflación, desinflación y caída de precios. <a href="https://www.bls.gov/news.release/archives/cpi_07132022.htm" target="_blank" rel="noopener noreferrer">Publicación original de BLS</a>.</div></details>
 </div>
 
 <!-- CPI -->
 <div id="ind-cpi" class="ind-panel">
   <div class="sec-eyebrow" style="color:var(--amber)">Inflación · BLS, mensual 8:30 AM ET</div>
   <div class="sec-title">CPI / IPC</div>
-  <p class="sec-desc">El dato que más mueve los mercados en el corto plazo. Una diferencia de 0.1% puede mover el S&P más de 1%.</p>
+  <p class="sec-desc">Una publicación importante para las expectativas de tasas. Su impacto depende de la sorpresa frente al consenso y de la composición del dato.</p>
   <div class="stat-row">
     <div class="stat"><div class="stat-label">CPI actual (YoY)</div><div class="stat-val" id="macro-cpi-current">Cargando…</div></div>
     <div class="stat"><div class="stat-label">Vivienda (shelter)</div><div class="stat-val">~33%</div></div>
@@ -534,119 +538,108 @@ setTimeout(function(){
     <div class="stat"><div class="stat-label">Categorías</div><div class="stat-val">~400</div></div>
   </div>
   <div class="def-box">El <strong>Consumer Price Index</strong> mide el cambio de precios de una canasta fija de bienes y servicios que consume un hogar urbano promedio. Se publica mensualmente por el Bureau of Labor Statistics. Hay dos versiones clave: <strong>CPI General</strong> (todo incluido) y <strong>CPI Core</strong> (excluye energía y alimentos por ser muy volátiles).</div>
-  <div class="tags"><span class="tag cool">CPI General</span><span class="tag warm">CPI Core (excl. energía/alimentos)</span><span class="tag">CPI Supernúcleo (servicios core)</span><span class="tag hot">Shelter CPI (vivienda)</span></div>
+  <div class="tags"><span class="tag cool">CPI General</span><span class="tag warm">CPI Core (excl. energía/alimentos)</span><span class="tag">Servicios subyacentes · revisar definición</span><span class="tag hot">Shelter CPI (vivienda)</span></div>
   <div class="scenarios">
-    <div class="sc bear"><div class="sc-badge">▼ CPI > expectativa</div><div class="sc-title">Sorpresa hawkish</div><div class="sc-body">El mercado anticipa más subidas o mantenimiento de tasas. S&P y Nasdaq caen el día de la publicación. Los bonos también caen (yields suben).</div></div>
-    <div class="sc bull"><div class="sc-badge">▲ CPI < expectativa</div><div class="sc-title">Sorpresa dovish</div><div class="sc-body">El mercado celebra y anticipa recortes. El 13 jul 2023, CPI=3.0% vs 3.1% esperado → S&P +0.85% ese día. Los bonos suben (yields bajan).</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ CPI > expectativa</div><div class="sc-title">Sorpresa hawkish</div><div class="sc-body">Una sorpresa al alza puede llevar al mercado a esperar tasas altas durante más tiempo. Eso puede presionar acciones y bonos: si sube el rendimiento exigido, baja el precio de un bono de pagos fijos. La reacción depende de qué componente sorprendió y de lo que ya estaba descontado.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ CPI < expectativa</div><div class="sc-title">Sorpresa dovish</div><div class="sc-body">Una sorpresa a la baja puede reducir las tasas esperadas y apoyar las valuaciones. Los bonos de pagos fijos pueden subir de precio si bajan sus rendimientos. Hay que verificar el consenso con su propia fuente y observar la reacción antes de afirmar que ocurrió.</div></div>
   </div>
-  <div class="example"><div class="example-ey">⬡ Mecánica real — Día de publicación CPI</div><div class="example-body">
-    <strong>8:30 AM ET:</strong> Se publica el dato.<br>
-    <strong>8:30:00–8:30:05:</strong> Los algoritmos HFT (high frequency trading) comparan real vs consenso en milisegundos.<br>
-    <strong>8:30:30:</strong> Los futuros del S&P ya se han movido <span class="hn hn-b">±0.5%–2%</span>.<br>
-    <strong>9:00–10:00 AM:</strong> Los traders humanos interpretan los sub-componentes (¿subió shelter? ¿servicios?)<br><br>
-    Una diferencia de <span class="hn hn-b">0.1%</span> puede mover el S&P <span class="hn hn-r">±1.5%</span>. El "Core" importa más que el general para la FED.
-  </div></div>
+  <details class="example macro-history"><summary class="example-ey">Referencia educativa · cómo leer una publicación del CPI</summary><div class="example-body">Primero identifica el <strong>período medido</strong> y si la cifra es mensual o interanual. Después compara el dato con el período previo y, si tienes una fuente fiable, con el consenso anterior a la publicación. Revisa inflación general, subyacente y componentes. La magnitud y dirección del movimiento de mercado deben verificarse con cotizaciones y una ventana temporal; no hay una reacción fija por cada décima de inflación. <a href="https://www.bls.gov/schedule/news_release/cpi.htm" target="_blank" rel="noopener noreferrer">Calendario oficial del CPI</a>.</div></details>
 </div>
 
 <!-- PCE -->
 <div id="ind-pce" class="ind-panel">
   <div class="sec-eyebrow" style="color:var(--amber)">Inflación FED · BEA, mensual</div>
   <div class="sec-title">PCE / Core PCE</div>
-  <p class="sec-desc">El indicador favorito de la FED. Menos famoso que el CPI pero más decisivo para las tasas.</p>
+  <p class="sec-desc">La medida de precios del consumo usada en la meta de inflación de la FED. La versión subyacente ayuda a estudiar su tendencia.</p>
   <div class="stat-row">
     <div class="stat"><div class="stat-label">Core PCE actual (YoY)</div><div class="stat-val" id="macro-pce-current">Cargando…</div></div>
-    <div class="stat"><div class="stat-label">Meta FED (Core PCE)</div><div class="stat-val">2.0%</div></div>
+    <div class="stat"><div class="stat-label">Meta FED (PCE general)</div><div class="stat-val">2.0%</div></div>
     <div class="stat"><div class="stat-label">Vivienda PCE</div><div class="stat-val">~17%</div></div>
     <div class="stat"><div class="stat-label">Salud PCE</div><div class="stat-val">~22%</div></div>
   </div>
-  <div class="def-box">El <strong>Personal Consumption Expenditures</strong> mide el gasto de los hogares, pero con una canasta dinámica: si el pollo sube mucho y la gente compra carne de res, el PCE lo refleja. Esto lo hace más representativo del comportamiento real. Da mayor peso a salud (~22%) y menor a vivienda (~17% vs 33% del CPI), lo que lo hace típicamente ~0.4% menor.</div>
+  <div class="def-box">El <strong>índice de precios PCE</strong> mide los precios del consumo personal, incluyendo compras realizadas por cuenta de los hogares. Sus ponderaciones se adaptan a cambios en el gasto. El <strong>PCE subyacente</strong> excluye alimentos y energía y ayuda a observar tendencias. PCE y CPI tienen coberturas y pesos distintos: la diferencia entre sus tasas no es fija, y los pesos que se muestran aquí son orientativos.</div>
   <div class="scenarios">
-    <div class="sc bull"><div class="sc-badge">▲ Core PCE → 2%</div><div class="sc-title">La FED puede recortar</div><div class="sc-body">Señal verde para el pivote. Los futuros del CME FedWatch suben la probabilidad de recortes. Las acciones growth anticipan el rally con meses de anticipación.</div></div>
-    <div class="sc bear"><div class="sc-badge">▼ Core PCE > 3%</div><div class="sc-title">"Higher for longer"</div><div class="sc-body">La FED no puede recortar. El costo de capital permanece alto. Las valuaciones de empresas con P/E elevado se comprimen. REIT y utilities bajo presión.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ Core PCE → 2%</div><div class="sc-title">La FED puede recortar</div><div class="sc-body">Una moderación sostenida puede aumentar la confianza en que la inflación converge a la meta. Para decidir, la FED también evalúa empleo, actividad y riesgos. Las probabilidades de recortes implícitas en futuros requieren una cotización actual; no se deducen de este dato por sí solo.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ Core PCE > 3%</div><div class="sc-title">"Higher for longer"</div><div class="sc-body">La persistencia de la inflación puede favorecer mantener una política restrictiva. Un debilitamiento marcado del empleo puede cambiar ese balance. Tasas altas durante más tiempo suelen presionar activos sensibles al financiamiento, sin fijar su reacción bursátil.</div></div>
   </div>
-  <div class="example"><div class="example-ey">⬡ Agosto 2024 — El PCE que desbloqueó los recortes</div><div class="example-body">El Core PCE de julio 2024 salió en <span class="hn hn-g">2.6%</span>, bajando desde el pico de <span class="hn hn-r">5.6%</span> en feb 2022. Esto le dio a la FED la confianza para anunciar el <strong>primer recorte de tasas en 4 años</strong> (−50 pb en septiembre 2024). El S&P había subido <span class="hn hn-g">+20%</span> desde enero 2024 anticipando este momento.</div></div>
+  <details class="example macro-history"><summary class="example-ey">Referencia histórica · la decisión de septiembre de 2024</summary><div class="example-body">El 18 de septiembre de 2024, la FED recortó su rango objetivo en 50 puntos básicos. Su comunicado mencionó progreso de la inflación y un mejor equilibrio entre los riesgos de empleo e inflación. La lección es leer la decisión junto con el conjunto de datos: un único PCE no explica por sí solo un cambio de política. <a href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20240918a.htm" target="_blank" rel="noopener noreferrer">Comunicado del FOMC</a>.</div></details>
 </div>
 
 <!-- NFP -->
 <div id="ind-nfp" class="ind-panel">
-  <div class="sec-eyebrow" style="color:var(--green)">Empleo · BLS, primer viernes del mes</div>
+  <div class="sec-eyebrow" style="color:var(--green)">Empleo · BLS, publicación mensual según calendario</div>
   <div class="sec-title">NFP &amp;<br>Desempleo</div>
-  <p class="sec-desc">El dato de empleo más esperado del mundo. Donde las buenas noticias económicas pueden ser malas para la bolsa.</p>
+  <p class="sec-desc">Una lectura del mercado laboral que conviene combinar con desempleo, salarios y revisiones.</p>
   <div class="stat-row">
-    <div class="stat"><div class="stat-label">Creación "sana"</div><div class="stat-val">150–200K</div></div>
+    <div class="stat"><div class="stat-label">Umbral de NFP</div><div class="stat-val">No fijo</div></div>
     <div class="stat"><div class="stat-label">NFP último mes</div><div class="stat-val" id="macro-nfp-current">Cargando…</div></div>
     <div class="stat"><div class="stat-label">Desempleo actual</div><div class="stat-val" id="macro-unemployment-current">Cargando…</div></div>
-    <div class="stat"><div class="stat-label">Pleno empleo</div><div class="stat-val">~4.0%</div></div>
+    <div class="stat"><div class="stat-label">Pleno empleo</div><div class="stat-val">Sin cifra fija</div></div>
   </div>
-  <div class="def-box">El <strong>Non-Farm Payrolls</strong> cuenta los nuevos empleos creados fuera del sector agrícola en EE.UU. el mes anterior. Se publican junto con la tasa de desempleo (U-3) y los <strong>ingresos medios por hora</strong>. Este último componente es crítico: si los salarios suben demasiado rápido, la FED ve inflación futura y actúa.</div>
-  <div class="formula">NFP alto + salarios ↑ = FED hawkish = bolsa presionada | NFP moderado + desempleo ↑ = FED dovish = bolsa sube</div>
+  <div class="def-box">El dato mensual de <strong>Non-Farm Payrolls (NFP)</strong> es la variación del empleo en nóminas no agrícolas. Mide puestos de trabajo, no personas únicas. El informe también publica desempleo (U-3), obtenido de una encuesta distinta, e <strong>ingresos medios por hora</strong>. Los salarios ayudan a evaluar las presiones de costos junto con la productividad. Los meses anteriores pueden revisarse.</div>
+  <div class="formula">Menor contratación puede aliviar la presión sobre tasas, pero también reducir expectativas de beneficios. Hay que comparar salarios, desempleo, revisiones y tendencia antes de interpretar la reacción de la bolsa.</div>
   <div class="scenarios">
-    <div class="sc bear"><div class="sc-badge">▼ Paradoja bajista</div><div class="sc-title">NFP > 300K</div><div class="sc-body">Economía recalentada → FED no puede bajar tasas → "buenas noticias = malas noticias". Esto confunde a muchos traders nuevos. El mercado a veces cae con datos de empleo excelentes.</div></div>
-    <div class="sc bull"><div class="sc-badge">▲ "Soft landing"</div><div class="sc-title">NFP 100–180K + desempleo ↑</div><div class="sc-body">La economía se enfría suavemente sin colapsar. La FED puede recortar tasas. El S&P sube porque anticipa dinero más barato sin recesión. El "escenario perfecto" del mercado.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ Paradoja bajista</div><div class="sc-title">Empleo más fuerte de lo esperado</div><div class="sc-body">Un empleo fuerte puede sostener el consumo y los beneficios, pero también retrasar recortes si aumenta la preocupación por la inflación. El efecto depende de los salarios, de la oferta laboral y del consenso; no existe un umbral universal que determine la reacción.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ "Soft landing"</div><div class="sc-title">Enfriamiento gradual</div><div class="sc-body">Un menor ritmo de contratación puede ser compatible con expansión y menor inflación. Pero una caída persistente del empleo o un salto del desempleo puede señalar deterioro. El mercado sopesa la posibilidad de tasas más bajas frente al riesgo de menores ganancias.</div></div>
   </div>
   <div class="chart-wrap"><div class="chart-title">NFP mensual · historial oficial reciente (miles)</div><canvas id="chart-nfp"></canvas></div>
-  <div class="example"><div class="example-ey">⬡ La paradoja — Agosto 2024</div><div class="example-body">NFP de julio salió en <span class="hn hn-r">+114K</span> (vs +180K esperado) y el desempleo subió a <span class="hn hn-r">4.3%</span>. El mercado primero cayó por miedo a recesión, pero luego <strong>subió</strong> porque los inversores apostaron a que la FED bajaría <span class="hn hn-b">50 pb</span> en septiembre. Lo hizo. El S&P cerró positivo esa semana.</div></div>
+  <details class="example macro-history"><summary class="example-ey">Referencia histórica · el empleo de julio de 2024</summary><div class="example-body">La publicación inicial del 2 de agosto de 2024 informó <strong>+114 mil empleos en julio y 4.3% de desempleo</strong>. Son las cifras de aquel comunicado, sujetas a revisiones posteriores. Un enfriamiento puede aliviar la presión inflacionaria, pero también aumentar el riesgo para el consumo y los beneficios. Para explicar la reacción de mercado hay que verificar precios, expectativas y otras noticias de esa sesión. <a href="https://www.bls.gov/news.release/archives/empsit_08022024.htm" target="_blank" rel="noopener noreferrer">Informe original de BLS</a>.</div></details>
 </div>
 
 <!-- PIB -->
 <div id="ind-pib" class="ind-panel">
   <div class="sec-eyebrow" style="color:var(--accent2)">Crecimiento · BEA, trimestral</div>
   <div class="sec-title">PIB (GDP)</div>
-  <p class="sec-desc">La fotografía más completa de la economía. Dos trimestres negativos = recesión oficial.</p>
+  <p class="sec-desc">Una medida amplia de producción. En EE.UU., el NBER fecha las recesiones evaluando varias medidas de actividad, no solo dos trimestres de PIB.</p>
   <div class="stat-row">
     <div class="stat"><div class="stat-label" id="macro-gdp-label">PIB actual (YoY)</div><div class="stat-val" id="macro-gdp-current">Cargando…</div></div>
-    <div class="stat"><div class="stat-label">Recesión técnica</div><div class="stat-val">2 trim. &lt;0</div></div>
+    <div class="stat"><div class="stat-label">Regla orientativa</div><div class="stat-val">2 trim. &lt;0</div></div>
     <div class="stat"><div class="stat-label">Consumo / PIB</div><div class="stat-val">~70%</div></div>
   </div>
-  <div class="def-box">El <strong>Producto Interno Bruto</strong> mide el valor de todos los bienes y servicios finales producidos en un territorio en un período. Se compone de: consumo privado (~70%), inversión empresarial (~18%), gasto gubernamental (~17%) y exportaciones netas. Se publica en 3 versiones: <strong>Avance</strong> (más movimiento de mercado), segunda estimación y final.</div>
+  <div class="def-box">El <strong>Producto Interno Bruto</strong> mide la producción final en un territorio. Incluye consumo, inversión, gasto público y exportaciones netas. El PIB <strong>real</strong> descuenta los cambios de precios. BEA publica una estimación de avance, una segunda y una tercera, además de revisiones posteriores. La variación <strong>interanual</strong> y la <strong>trimestral anualizada</strong> comparan períodos distintos y no deben intercambiarse.</div>
   <div class="scenarios">
-    <div class="sc bull"><div class="sc-badge">▲ PIB > expectativa</div><div class="sc-title">Expansión económica</div><div class="sc-body">Las empresas venden más, las ganancias crecen, las acciones suben. Pero si crece demasiado rápido, la FED puede subir tasas para evitar sobrecalentamiento.</div></div>
-    <div class="sc bear"><div class="sc-badge">▼ PIB negativo x2</div><div class="sc-title">Recesión oficial</div><div class="sc-body">Las empresas despiden, las ganancias caen, los inversores huyen a bonos y oro. S&P promedio: −32% durante recesiones históricas.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ PIB > expectativa</div><div class="sc-title">Expansión económica</div><div class="sc-body">Un crecimiento más fuerte puede apoyar ventas y beneficios. También puede elevar las tasas esperadas si la demanda agrava la inflación. Hay que revisar qué componentes impulsaron el PIB: consumo, inversión, inventarios o comercio exterior no cuentan la misma historia.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ PIB negativo x2</div><div class="sc-title">Señal de debilidad a contrastar</div><div class="sc-body">Dos contracciones trimestrales consecutivas alertan sobre debilidad, pero no determinan por sí solas una recesión fechada por el NBER. Conviene contrastar empleo, ingreso y ventas reales. El mercado puede anticipar estos riesgos antes de la publicación.</div></div>
   </div>
-  <div class="example"><div class="example-ey">⬡ Recesiones vs bolsa — Historia</div><div class="example-body">
-    <strong>2008:</strong> PIB <span class="hn hn-r">−8.9%</span> en Q4 → S&P <span class="hn hn-r">−57%</span> desde pico.<br>
-    <strong>2020 COVID:</strong> PIB <span class="hn hn-r">−31.4%</span> en Q2 → S&P <span class="hn hn-r">−34%</span> en 33 días (la caída más rápida de la historia).<br>
-    <strong>2022:</strong> 2 trimestres negativos (recesión técnica) pero el mercado no colapsó porque el empleo siguió fuerte.<br>
-    <strong>2023:</strong> PIB <span class="hn hn-g">+2.5%</span> → S&P <span class="hn hn-g">+24%</span> en el año.
-  </div></div>
+  <details class="example macro-history"><summary class="example-ey">Referencia histórica · recesiones y revisiones del PIB</summary><div class="example-body">La recesión de 2020 ilustra que intensidad, duración y difusión de una caída económica se estudian conjuntamente. Las estimaciones de PIB pueden revisarse; compara siempre la misma versión y medida. En EE.UU., el NBER fecha los ciclos con múltiples indicadores y no mediante una regla automática de dos trimestres. <a href="https://www.nber.org/research/business-cycle-dating" target="_blank" rel="noopener noreferrer">Criterios y cronología del NBER</a> · <a href="https://www.bea.gov/resources/methodologies/nipa-handbook" target="_blank" rel="noopener noreferrer">Metodología del PIB de BEA</a>.</div></details>
 </div>
 
 <!-- PMI -->
 <div id="ind-pmi" class="ind-panel">
   <div class="sec-eyebrow" style="color:var(--accent2)">Actividad · ISM, primeros días del mes</div>
   <div class="sec-title">ISM PMI</div>
-  <p class="sec-desc">El indicador adelantado por excelencia. Predice la economía 1–2 meses antes que el PIB.</p>
+  <p class="sec-desc">Una encuesta temprana de la actividad del mes. Ayuda a evaluar el ciclo junto con los datos efectivos de producción, empleo y consumo.</p>
   <div class="stat-row">
     <div class="stat"><div class="stat-label">Dato actual</div><div class="stat-val" id="macro-pmi-current">Cargando…</div></div>
-    <div class="stat"><div class="stat-label">&gt;50 = Expansión</div><div class="stat-val" style="color:var(--green)">Alcista</div></div>
-    <div class="stat"><div class="stat-label">&lt;50 = Contracción</div><div class="stat-val" style="color:var(--red)">Bajista</div></div>
-    <div class="stat"><div class="stat-label">Servicios = % PIB</div><div class="stat-val">~77%</div></div>
+    <div class="stat"><div class="stat-label">&gt;50 = Expansión</div><div class="stat-val" style="color:var(--green)">Más actividad</div></div>
+    <div class="stat"><div class="stat-label">&lt;50 = Contracción</div><div class="stat-val" style="color:var(--red)">Menos actividad</div></div>
+    <div class="stat"><div class="stat-label">Comparar con</div><div class="stat-val">Servicios</div></div>
   </div>
-  <div class="def-box">El <strong>Purchasing Managers Index</strong> encuesta a directores de compras sobre 5 factores: nuevos pedidos (30%), producción (25%), empleo (20%), entregas de proveedores (15%) e inventarios (10%). Es el primer dato económico en salir cada mes y actúa como termómetro de la actividad futura. Hay <strong>PMI Manufacturero</strong> (industria, primeros días) y <strong>PMI de Servicios</strong> (más relevante, ~77% del PIB).</div>
+  <div class="def-box">Los índices <strong>ISM PMI</strong> son encuestas de difusión: indican cuántas empresas informan mejora, estabilidad o deterioro frente al mes anterior. El PMI manufacturero combina cinco componentes con igual peso; el de servicios combina cuatro. Una lectura mayor que 50 señala expansión del sector encuestado, no un retorno esperado de las acciones. Los PMI de <strong>S&amp;P Global</strong> son encuestas distintas y sus niveles no deben sustituirse unos por otros.</div>
   <div class="scenarios">
-    <div class="sc bull"><div class="sc-badge">▲ PMI > 55</div><div class="sc-title">Expansión fuerte</div><div class="sc-body">Empresas reciben más pedidos, contratan más, producen más. Señal de ganancias corporativas crecientes en 1–2 trimestres. Industriales, tech y materiales se benefician.</div></div>
-    <div class="sc bear"><div class="sc-badge">▼ PMI &lt; 45</div><div class="sc-title">Contracción clara</div><div class="sc-body">Las empresas reducen pedidos e inventarios. Señal temprana de desaceleración. El mercado empieza a descontar menores ganancias futuras antes de que aparezcan en los reportes trimestrales.</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ PMI > 55</div><div class="sc-title">Expansión fuerte</div><div class="sc-body">Más empresas reportan mejora que deterioro frente al mes anterior. Conviene revisar nuevos pedidos, empleo y precios pagados: la expansión puede apoyar ingresos, mientras que los costos o las tasas pueden limitar los beneficios.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ PMI &lt; 45</div><div class="sc-title">Contracción clara</div><div class="sc-body">Una lectura baja sugiere una contracción extendida en el sector encuestado. Hay que contrastarla con producción, empleo y el otro PMI: manufactura y servicios pueden divergir. No equivale por sí sola a una recesión de toda la economía.</div></div>
   </div>
-  <div class="example"><div class="example-ey">⬡ PMI como señal temprana — 2022</div><div class="example-body">El PMI Manufacturero cruzó por debajo de <span class="hn hn-r">50</span> en noviembre 2022, meses antes de que el PIB confirmara la desaceleración. Los traders que usaron el PMI como señal salieron antes del pico del mercado. El PMI Servicios es hoy más vigilado: en ene 2023 rebotó a <span class="hn hn-g">55.2</span>, señalando la recuperación, y el S&P subió <span class="hn hn-g">+6%</span> ese mes.</div></div>
+  <details class="example macro-history"><summary class="example-ey">Referencia educativa · expansión y desaceleración no son opuestos</summary><div class="example-body">Un PMI que baja de 55 a 52 sigue indicando expansión del sector, pero con menor amplitud que antes. Uno que sube de 45 a 48 sigue indicando contracción, aunque menos extendida. Es un ejemplo hipotético para leer el índice; no una publicación actual ni una señal automática de compra o venta. <a href="https://www.ismworld.org/supply-management-news-and-reports/reports/ism-report-on-business/" target="_blank" rel="noopener noreferrer">Informes y metodología de ISM</a>.</div></details>
 </div>
 
 <!-- CONSUMER -->
 <div id="ind-consumer" class="ind-panel">
   <div class="sec-eyebrow" style="color:#ff8099">Sentimiento · Mensual</div>
   <div class="sec-title">Confianza del<br>Consumidor</div>
-  <p class="sec-desc">El termómetro del gasto. Si el consumidor está optimista, gasta. Si gasta, las empresas ganan.</p>
+  <p class="sec-desc">Cómo perciben los hogares su economía. Se compara con ingresos, empleo y gasto efectivo para entender el consumo.</p>
   <div class="stat-row">
     <div class="stat"><div class="stat-label">U. Michigan actual</div><div class="stat-val" id="macro-consumer-current">Cargando…</div></div>
     <div class="stat"><div class="stat-label">Consumo / PIB</div><div class="stat-val">~70%</div></div>
     <div class="stat"><div class="stat-label">Conf. Board</div><div class="stat-val">Situación actual</div></div>
     <div class="stat"><div class="stat-label">U. Michigan</div><div class="stat-val">Expectativas</div></div>
   </div>
-  <div class="def-box">Hay dos fuentes principales: el <strong>Conference Board</strong> (más enfocado en empleo y condiciones actuales, mejor predictor de gasto a 3 meses) y la <strong>Universidad de Michigan</strong> (más enfocado en expectativas a 6 meses e incluye percepciones de inflación futura — la FED lo usa para calibrar expectativas inflacionarias del público).</div>
+  <div class="def-box">El <strong>Conference Board</strong> y la <strong>Universidad de Michigan</strong> publican encuestas diferentes sobre condiciones actuales y expectativas. Sus índices tienen bases distintas; un nivel de uno no se compara directamente con el del otro. Michigan también recoge expectativas de inflación. La confianza mide percepciones, mientras que las ventas minoristas miden gasto nominal efectivo.</div>
   <div class="scenarios">
-    <div class="sc bull"><div class="sc-badge">▲ Confianza alta</div><div class="sc-title">El consumidor gasta</div><div class="sc-body">Más ventas en autos, viajes, ropa, electrónica y restaurantes. Amazon, Tesla, Nike, Booking, Visa — todo el consumo discrecional se beneficia. Ganancias corporativas suben.</div></div>
-    <div class="sc bear"><div class="sc-badge">▼ Confianza baja</div><div class="sc-title">El consumidor ahorra</div><div class="sc-body">En marzo 2020, la confianza colapsó y el S&P cayó 34% en semanas. Las empresas de lujo, viajes y restaurantes lideran las caídas. Walmart y Dollar General prosperan (value seeking).</div></div>
+    <div class="sc bull"><div class="sc-badge">▲ Confianza alta</div><div class="sc-title">Posible apoyo al consumo</div><div class="sc-body">El optimismo puede favorecer las compras, especialmente de bienes duraderos. Su traducción a ventas depende del ingreso disponible, el crédito y los precios; una encuesta favorable no garantiza mejores beneficios para todas las empresas.</div></div>
+    <div class="sc bear"><div class="sc-badge">▼ Confianza baja</div><div class="sc-title">Cautela de los hogares</div><div class="sc-body">Una confianza débil puede acompañar menor disposición a comprar. Pero los hogares pueden seguir gastando si conservan empleo e ingresos. Compara la encuesta con ventas e inflación antes de concluir que el consumo o la bolsa caerán.</div></div>
   </div>
-  <div class="example"><div class="example-ey">⬡ COVID 2020 — El colapso y la recuperación más rápidos</div><div class="example-body">La confianza del consumidor cayó de <span class="hn hn-g">132</span> (feb 2020) a <span class="hn hn-r">85</span> (abril 2020) en solo 2 meses. El S&P cayó <span class="hn hn-r">−34%</span>. Con estímulos de $1,200 por persona y reapertura de economías, la confianza rebotó y el S&P recuperó todo en <span class="hn hn-g">5 meses</span>, el rebote más rápido de la historia desde una caída de esa magnitud.</div></div>
+  <details class="example macro-history"><summary class="example-ey">Referencia educativa · confianza no equivale a gasto</summary><div class="example-body">Una encuesta puede mostrar pesimismo por precios altos mientras los hogares mantienen sus compras gracias al empleo y los ingresos. Si bajan confianza y ventas reales al mismo tiempo, la lectura de debilidad gana respaldo. Compara cada índice con su propio historial y distingue las cifras preliminares de las definitivas. <a href="https://www.sca.isr.umich.edu/" target="_blank" rel="noopener noreferrer">Encuesta de la Universidad de Michigan</a> · <a href="https://www.census.gov/retail/index.html" target="_blank" rel="noopener noreferrer">Ventas minoristas del Census Bureau</a>.</div></details>
 </div>
 
 <!-- ===== CALCULADORA DE IMPACTO (reubicada dentro de Indicadores) ===== -->
@@ -1982,7 +1975,7 @@ async function requestMacroSnapshot(force=false){
 function macroDisplay(item){
   const value = item?.display_value;
   if(value == null || !Number.isFinite(Number(value))) return '—';
-  if(item.display_unit === 'percent' || item.display_unit === 'percent_yoy') return Number(value).toFixed(2)+'%';
+  if(['percent','percent_yoy','percent_mom','percent_qoq_annualized'].includes(item.display_unit)) return Number(value).toFixed(2)+'%';
   if(item.display_unit === 'change_thousands') return (Number(value)>=0?'+':'')+Number(value).toFixed(0)+'K';
   if(item.display_unit === 'billions') return '$'+Number(value).toLocaleString('en-US',{maximumFractionDigits:1})+'B';
   return Number(value).toLocaleString('en-US',{maximumFractionDigits:2});
@@ -2019,14 +2012,15 @@ function updateMacroCurrentStats(series){
 }
 
 function renderMacroSnapshot(macro){
+  if(window.MarketIntelMacroContext) window.MarketIntelMacroContext.render(macro);
   const host = document.getElementById('macro-live');
   const series = macro?.series || {};
   const updated = document.getElementById('macro-updated');
   if(host && Object.keys(series).length){
-    const order = ['fed_upper','fed_lower','cpi','core_pce','unemployment','payrolls','gdp','pmi','consumer_sentiment','treasury_10y'];
+    const order = ['fed_upper','fed_lower','cpi','core_cpi','pce','core_pce','unemployment','payrolls','wages','gdp','retail_sales','pmi','services_pmi','consumer_sentiment','jolts','initial_claims','treasury_10y'];
     host.innerHTML = order.map(key => {
       const item = series[key] || {label:key,display_value:null,status:'unavailable'};
-      const suffix = item.display_unit === 'percent_yoy' ? ' · YoY' : item.display_unit === 'change_thousands' ? ' · cambio mensual' : '';
+      const suffix = item.display_unit === 'percent_yoy' ? ' · interanual' : item.display_unit === 'change_thousands' || item.display_unit === 'percent_mom' ? ' · cambio mensual' : item.frequency === 'weekly' ? ' · semanal' : item.display_unit === 'thousands' ? ' · miles' : '';
       const unavailable = item.status === 'unavailable' || item.display_value == null;
       const value = unavailable ? 'Sin dato' : macroDisplay(item);
       const detail = unavailable ? ` · ${item.error || 'reintento automático'}` : ` · período ${macroPeriod(item)}`;
@@ -2068,7 +2062,10 @@ async function loadMacroSnapshot(options={}){
     if(macroSnapshotCache){
       const stale = {...macroSnapshotCache,status:'error',series:Object.fromEntries(Object.entries(macroSnapshotCache.series||{}).map(([key,item])=>[key,{...item,status:item.display_value==null?'unavailable':'stale',warning:'No se pudo consultar el servidor. Se muestra la última lectura recibida.'}]))};
       renderMacroSnapshot(stale);
-    }else if(host) host.innerHTML = '<div class="mi-macro-empty warn">No se pudo consultar el servidor de datos. Reintentaremos automáticamente. <button type="button" onclick="loadMacroSnapshot({force:true})">Reintentar ahora</button></div>';
+    }else {
+      if(host) host.innerHTML = '<div class="mi-macro-empty warn">No se pudo consultar el servidor de datos. Reintentaremos automáticamente. <button type="button" onclick="loadMacroSnapshot({force:true})">Reintentar ahora</button></div>';
+      if(window.MarketIntelMacroContext) window.MarketIntelMacroContext.render({status:'error',series:{}});
+    }
     const updated = document.getElementById('macro-updated');
     if(updated) updated.textContent = 'La última consulta falló; no se confirmó una actualización';
     return null;
@@ -2077,8 +2074,12 @@ async function loadMacroSnapshot(options={}){
 
 function formatLocalDateTime(value){
   if(!value) return '—';
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(value))){
+    const day = new Date(value+'T12:00:00Z');
+    return Number.isNaN(day.getTime()) ? '—' : day.toLocaleDateString('es-DO',{dateStyle:'short',timeZone:'America/Santo_Domingo'});
+  }
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('es-DO',{dateStyle:'short',timeStyle:'short'});
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('es-DO',{dateStyle:'short',timeStyle:'short',timeZone:'America/Santo_Domingo'});
 }
 
 function escapeNewsText(value){

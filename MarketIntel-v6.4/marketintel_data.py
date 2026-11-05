@@ -12,7 +12,7 @@ import math
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
 from xml.etree import ElementTree
@@ -455,14 +455,143 @@ FRED_SERIES = {
     # Use the non-seasonally-adjusted headline CPI series so the displayed
     # YoY rate matches the CPI figure reported by BLS in its release.
     'cpi': ('CPIAUCNS', 'CPI general (NSA)', 'index'),
+    'core_cpi': ('CPILFENS', 'CPI subyacente (NSA)', 'index'),
+    'pce': ('PCEPI', 'PCE general', 'index'),
     'core_pce': ('PCEPILFE', 'Core PCE', 'index'),
     'unemployment': ('UNRATE', 'Desempleo', 'percent'),
     'payrolls': ('PAYEMS', 'Nóminas no agrícolas', 'thousands'),
+    'wages': ('CES0500000003', 'Salario medio por hora', 'dollars_per_hour'),
+    'retail_sales': ('RSAFS', 'Ventas minoristas nominales', 'millions'),
+    'jolts': ('JTSJOL', 'Vacantes JOLTS', 'thousands'),
+    'initial_claims': ('ICSA', 'Solicitudes iniciales de desempleo', 'persons'),
     'gdp': ('GDPC1', 'PIB real', 'billions'),
     'treasury_10y': ('DGS10', 'Treasury 10Y', 'percent'),
     'pmi': ('NAPM', 'ISM manufacturero', 'index'),
+    'services_pmi': ('ISM-SERVICES', 'ISM de servicios', 'index'),
     'consumer_sentiment': ('UMCSENT', 'Confianza del consumidor', 'index'),
 }
+
+_MACRO_YOY = {'cpi', 'core_cpi', 'pce', 'core_pce', 'gdp', 'wages'}
+_MACRO_PUBLICATIONS = {
+    'cpi': ('BLS', 'https://www.bls.gov/news.release/cpi.htm'),
+    'core_cpi': ('BLS', 'https://www.bls.gov/news.release/cpi.htm'),
+    'pce': ('BEA', 'https://www.bea.gov/data/income-saving/personal-income'),
+    'core_pce': ('BEA', 'https://www.bea.gov/data/income-saving/personal-income'),
+    'payrolls': ('BLS', 'https://www.bls.gov/news.release/empsit.htm'),
+    'unemployment': ('BLS', 'https://www.bls.gov/news.release/empsit.htm'),
+    'wages': ('BLS', 'https://www.bls.gov/news.release/empsit.htm'),
+    'jolts': ('BLS', 'https://www.bls.gov/news.release/jolts.htm'),
+    'initial_claims': ('Departamento de Trabajo', 'https://www.dol.gov/ui/data.pdf'),
+    'retail_sales': ('Census Bureau', 'https://www.census.gov/retail/index.html'),
+    'gdp': ('BEA', 'https://www.bea.gov/data/gdp/gross-domestic-product'),
+    'fed_upper': ('Federal Reserve', 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'),
+    'fed_lower': ('Federal Reserve', 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm'),
+}
+
+
+def _macro_measure(key, value, date, by_period, unit):
+    """Use an exact comparison period: never bridge missing months/quarters."""
+    if key in _MACRO_YOY:
+        previous = by_period.get(_shift_month(date, -12))
+        return ((value / previous - 1) * 100 if previous not in (None, 0) else None), 'percent_yoy'
+    if key in {'payrolls', 'retail_sales'}:
+        previous = by_period.get(_shift_month(date, -1))
+        if key == 'payrolls':
+            return (value - previous if previous is not None else None), 'change_thousands'
+        return ((value / previous - 1) * 100 if previous not in (None, 0) else None), 'percent_mom'
+    return value, unit
+
+
+def _macro_metrics(key, date, by_period):
+    current = by_period.get(date)
+    if current is None:
+        return {}
+    metrics = {}
+    if key in _MACRO_YOY | {'retail_sales'}:
+        prior_year = by_period.get(_shift_month(date, -12))
+        if prior_year not in (None, 0):
+            metrics['yoy'] = round((current / prior_year - 1) * 100, 2)
+    # CPI NSA is valid for YoY but its monthly change must not be described
+    # as the seasonally-adjusted headline MoM release.
+    if key in {'pce', 'core_pce', 'wages', 'retail_sales'}:
+        prior_month = by_period.get(_shift_month(date, -1))
+        if prior_month not in (None, 0):
+            metrics['mom'] = round((current / prior_month - 1) * 100, 2)
+    if key == 'gdp':
+        prior_quarter = by_period.get(_shift_month(date, -3))
+        if prior_quarter is not None and current > 0 and prior_quarter > 0:
+            metrics['qoq_annualized'] = round(((current / prior_quarter) ** 4 - 1) * 100, 2)
+    return metrics
+
+
+def _enrich_macro_item(key, item, baseline=None):
+    """Attach context metadata without treating observations as release dates."""
+    frequency = ('daily' if key in {'fed_upper', 'fed_lower', 'treasury_10y'}
+                 else 'quarterly' if key == 'gdp' else 'weekly' if key == 'initial_claims' else 'monthly')
+    item['frequency'] = frequency
+    item['period'] = item.get('date')
+    item.setdefault('published_at', None)
+    item['publication_date_status'] = 'verified' if item.get('published_at') else 'unavailable'
+    item.setdefault('fetched_at', None)
+    publisher, release_url = _MACRO_PUBLICATIONS.get(key, (item.get('source'), item.get('source_url')))
+    item['publisher'] = publisher
+    item['release_url'] = release_url
+    item['publication_source_url'] = release_url
+    item['release_url_kind'] = 'latest_release_or_series_page'
+    item['consensus'] = None
+    item['consensus_status'] = 'not_connected'
+    item['market_reaction'] = None
+    item['market_reaction_status'] = 'not_verified'
+    item.setdefault('metrics', {})
+    if item.get('display_unit') == 'percent_yoy' and item.get('display_value') is not None:
+        item['metrics'].setdefault('yoy', item['display_value'])
+    item['seasonal_adjustment'] = ('not_seasonally_adjusted' if key in {'cpi', 'core_cpi'}
+                                   else 'not_applicable' if frequency == 'daily' else 'seasonally_adjusted')
+    if key in {'consumer_sentiment', 'pmi', 'services_pmi'}:
+        item['seasonal_adjustment'] = 'see_source'
+    item['previous'] = None
+    date = item.get('date')
+    if date:
+        try:
+            datetime.fromisoformat(date)
+        except (ValueError, TypeError):
+            date = None
+    if date:
+        rows = [row for row in item.get('history', []) if row.get('date', '') < date
+                and row.get('display_value') is not None
+                and row.get('display_unit') == item.get('display_unit')]
+        if frequency in {'monthly', 'quarterly'}:
+            expected = _shift_month(date, -3 if frequency == 'quarterly' else -1)
+            rows = [row for row in rows if row['date'] == expected]
+        elif frequency == 'weekly':
+            expected = (datetime.fromisoformat(date) - timedelta(days=7)).date().isoformat()
+            rows = [row for row in rows if row['date'] == expected]
+        if rows:
+            prior = max(rows, key=lambda row: row['date'])
+            item['previous'] = {field: prior[field] for field in ('date', 'display_value', 'display_unit')}
+            item['previous']['metrics'] = prior.get('metrics', {})
+    item['context_usable'] = (item.get('status') == 'ok' and not item.get('period_warning')
+                              and date is not None and _valid_number(item.get('display_value')) is not None)
+    # This is an observed comparison between fetched snapshots, not a claim
+    # about a release's official first estimate or BLS revision tables.
+    compatible = baseline and baseline.get('id') == item.get('id') and baseline.get('display_unit') == item.get('display_unit')
+    item['revision_basis'] = 'observed_snapshots' if compatible else 'unavailable'
+    item['revision_note'] = ('Comparación con consultas verificadas anteriores en este servidor; no equivale a la revisión oficial. '
+                             'El historial de revisiones observado se pierde al reiniciar el servidor.')
+    item['revisions'] = list(baseline.get('revisions', [])) if compatible else []
+    if compatible and item['context_usable']:
+        prior_rows = {row['date']: row for row in baseline.get('history', [])}
+        if baseline.get('date'):
+            prior_rows[baseline['date']] = baseline
+        rows = list(item.get('history', [])) + [item]
+        changes = {}
+        for row in rows:
+            before = prior_rows.get(row.get('date'))
+            if before and before.get('display_value') is not None and row.get('display_value') is not None and before.get('display_unit') == row.get('display_unit') and before['display_value'] != row['display_value']:
+                changes[row['date']] = {'date': row['date'], 'previous_value': before['display_value'],
+                    'value': row['display_value'], 'display_unit': row['display_unit'], 'detected_at': item.get('fetched_at')}
+        if changes:
+            item['revisions'] = (item['revisions'] + [changes[date] for date in sorted(changes)])[-6:]
 
 
 def _fetch_fred_public_observations(requests_module, series_id, limit=73):
@@ -638,12 +767,15 @@ def fetch_michigan_sentiment_snapshot(requests_module):
     }
 
 
-def fetch_ism_snapshot(requests_module):
-    """Obtiene el PMI manufacturero del informe oficial mensual de ISM."""
+def fetch_ism_snapshot(requests_module, services=False):
+    """Read a verified month/year from the official ISM report itself."""
+    sector = 'Services' if services else 'Manufacturing'
+    route = 'services' if services else 'pmi'
+    identifier = 'ISM-SERVICES' if services else 'ISM-PMI'
     now = datetime.now(timezone.utc)
     candidates = []
     failures = []
-    for offset in range(0, 4):
+    for offset in range(0, 2 if services else 4):
         month = now.month - 1 - offset
         year = now.year
         while month <= 0:
@@ -653,22 +785,22 @@ def fetch_ism_snapshot(requests_module):
         candidates.append((year, month, month_name))
 
     for year, month, month_name in candidates:
-        url = f'https://www.ismworld.org/supply-management-news-and-reports/reports/ism-pmi-reports/pmi/{month_name}/'
+        url = f'https://www.ismworld.org/supply-management-news-and-reports/reports/ism-pmi-reports/{route}/{month_name}/'
         try:
             page = _cached_text(requests_module, url, timeout=5)
             page_text = _page_text(page).replace('®', '').replace('™', '')
             # Month-only URLs are reused by ISM. Require a matching report
             # month AND year in the document, not the guessed URL period.
-            report = re.search(r'\b' + month_name + r'\s+' + str(year) + r'\s+(?:ISM\s+)?Manufacturing\s+PMI\s+Report\b', page_text, re.I)
+            report = re.search(r'\b' + month_name + r'\s+' + str(year) + r'\s+(?:ISM\s+)?' + sector + r'\s+PMI\s+Report\b', page_text, re.I)
             if not report:
                 continue
             match = re.search(
-                r'Manufacturing\s+PMI\s+at\s+([0-9]+(?:\.[0-9]+)?)\s*%',
+                sector + r'\s+PMI\s+at\s+([0-9]+(?:\.[0-9]+)?)\s*%',
                 page_text[max(0,report.start()-180):report.start()], re.I,
             )
             if not match:
                 match = re.search(
-                    r'The\s+Manufacturing\s+PMI\s+registered\s+([0-9]+(?:\.[0-9]+)?)\s+percent',
+                    r'The\s+' + sector + r'\s+PMI\s+registered\s+([0-9]+(?:\.[0-9]+)?)\s+percent',
                     page_text[report.end():report.end()+1600], re.I,
                 )
             if not match:
@@ -677,8 +809,8 @@ def fetch_ism_snapshot(requests_module):
             if not 0 <= value <= 100:
                 continue
             return {
-                'id': 'ISM-PMI',
-                'label': 'ISM manufacturero',
+                'id': identifier,
+                'label': 'ISM de servicios' if services else 'ISM manufacturero',
                 'unit': 'index',
                 'value': value,
                 'display_value': value,
@@ -693,12 +825,13 @@ def fetch_ism_snapshot(requests_module):
         except Exception as exc:
             failures.append(_safe_error(exc))
             continue
-    raise ValueError('ISM-PMI: ' + ('; '.join(sorted(set(failures))) if failures else 'mes, año o PMI del informe no verificables'))
+    raise ValueError(identifier + ': ' + ('; '.join(sorted(set(failures))) if failures else 'mes, año o PMI del informe no verificables'))
 
 
 def fetch_fred_snapshot(requests_module, api_key):
     series = {}
     errors = []
+    baseline = dict(_MACRO_LAST_GOOD)
 
     def fetch_one(entry):
         key, (series_id, label, unit) = entry
@@ -716,11 +849,11 @@ def fetch_fred_snapshot(requests_module, api_key):
                     primary = fetch_bls_cpi_snapshot(requests_module)
                 except Exception as exc:
                     primary_error = 'BLS: ' + _safe_error(exc)
-            if key == 'pmi':
+            if key in {'pmi', 'services_pmi'}:
                 try:
-                    return key, fetch_ism_snapshot(requests_module), None
+                    return key, fetch_ism_snapshot(requests_module, services=key == 'services_pmi'), None
                 except Exception as exc:
-                    return key, None, str(exc) if isinstance(exc, ValueError) else 'ISM-PMI: '+_safe_error(exc)
+                    return key, None, str(exc) if isinstance(exc, ValueError) else ('ISM-SERVICES: ' if key == 'services_pmi' else 'ISM-PMI: ')+_safe_error(exc)
             if key == 'core_pce':
                 try:
                     bea_primary = fetch_bea_core_pce_snapshot(requests_module)
@@ -765,7 +898,16 @@ def fetch_fred_snapshot(requests_module, api_key):
                 return key, None, f'{series_id}: sin valores numéricos'
             # An observation period cannot be later than the date of consultation.
             today = datetime.now(timezone.utc).date().isoformat()
-            valid_observations = [pair for pair in valid_observations if pair[0].get('date', '') <= today]
+            def valid_period(pair):
+                date = pair[0].get('date', '')
+                if not isinstance(date, str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}', date) or date > today:
+                    return False
+                try:
+                    datetime.fromisoformat(date)
+                    return True
+                except ValueError:
+                    return False
+            valid_observations = [pair for pair in valid_observations if valid_period(pair)]
             if not valid_observations:
                 return key, primary or bea_primary, None if primary or bea_primary else f'{series_id}: sin períodos válidos'
             valid_observations.sort(key=lambda pair: pair[0]['date'], reverse=True)
@@ -788,18 +930,10 @@ def fetch_fred_snapshot(requests_module, api_key):
                 item['warning'] = ('FRED tiene un período más reciente que BLS; se muestra CPI NSA de FRED.'
                                    if key == 'cpi' else 'FRED tiene un período más reciente que la página de U. Michigan; verificar la revisión.')
             by_period = {row['date']: row_value for row, row_value in valid_observations}
-            numeric = [row_value for _, row_value in valid_observations]
-            previous_year = by_period.get(_shift_month(item['date'], -12))
-            if key in {'cpi', 'core_pce', 'gdp'}:
-                item['display_value'] = round((value / previous_year - 1) * 100, 2) if previous_year not in (None, 0) else None
-                item['display_unit'] = 'percent_yoy'
-            elif key == 'payrolls':
-                prior_month = by_period.get(_shift_month(item['date'], -1))
-                item['display_value'] = round(value - prior_month, 0) if prior_month is not None else None
-                item['display_unit'] = 'change_thousands'
-            else:
-                item['display_value'] = value
-                item['display_unit'] = unit
+            display_value, display_unit = _macro_measure(key, value, item['date'], by_period, unit)
+            item['display_value'] = round(display_value, 2) if display_value is not None else None
+            item['display_unit'] = display_unit
+            item['metrics'] = _macro_metrics(key, item['date'], by_period)
 
             if bea_primary and (
                 bea_primary.get('date', '') > item.get('date', '')
@@ -810,25 +944,15 @@ def fetch_fred_snapshot(requests_module, api_key):
 
             history = []
             for index, (row, row_value) in enumerate(valid_observations):
-                display_value = row_value
-                display_unit = unit
-                if key in {'cpi', 'core_pce', 'gdp'}:
-                    previous = by_period.get(_shift_month(row['date'], -12))
-                    if previous in (None, 0):
-                        continue
-                    display_value = (row_value / previous - 1) * 100
-                    display_unit = 'percent_yoy'
-                elif key == 'payrolls':
-                    previous = by_period.get(_shift_month(row['date'], -1))
-                    if previous is None:
-                        continue
-                    display_value = row_value - previous
-                    display_unit = 'change_thousands'
+                display_value, display_unit = _macro_measure(key, row_value, row['date'], by_period, unit)
+                if display_value is None:
+                    continue
                 history.append({
                     'date': row.get('date'),
                     'value': round(row_value, 4),
                     'display_value': round(display_value, 2),
                     'display_unit': display_unit,
+                    'metrics': _macro_metrics(key, row['date'], by_period),
                 })
             item['history'] = list(reversed(history[:60]))
             return key, item, None
@@ -857,8 +981,6 @@ def fetch_fred_snapshot(requests_module, api_key):
                     ))):
                     item = dict(previous, status='stale', warning='La fuente devolvió una lectura anterior a la última verificada; se mantiene la anterior sin contarla como actual.')
                 series[key] = item
-                if item['status'] == 'ok':
-                    _MACRO_LAST_GOOD[key] = dict(item)
             if error:
                 errors.append(error)
 
@@ -875,7 +997,7 @@ def fetch_fred_snapshot(requests_module, api_key):
                 'id': series_id,
                 'label': label,
                 'unit': unit,
-                'source': 'ISM' if key == 'pmi' else 'BLS / FRED' if key == 'cpi' else 'FRED',
+                'source': 'ISM' if key in {'pmi', 'services_pmi'} else 'BLS / FRED' if key == 'cpi' else 'FRED',
                 'value': None,
                 'display_value': None,
                 'display_unit': unit,
@@ -892,7 +1014,8 @@ def fetch_fred_snapshot(requests_module, api_key):
     # The quarter's observation date is its FIRST day. Q2 (April 1) is still
     # the latest published GDP until the Q3 advance estimate in late October.
     max_age = {'fed_upper': 5, 'fed_lower': 5, 'treasury_10y': 10,
-               'gdp': 240, 'core_pce': 105, 'consumer_sentiment': 105}
+               'gdp': 240, 'core_pce': 105, 'pce': 105, 'jolts': 105,
+               'consumer_sentiment': 105, 'initial_claims': 21}
     for key, item in series.items():
         item.setdefault('published_at', None)
         if item.get('date'):
@@ -902,6 +1025,9 @@ def fetch_fred_snapshot(requests_module, api_key):
                     item['period_warning'] = 'Período antiguo o futuro: comprobar con la fuente. No equivale a una publicación de hoy.'
             except ValueError:
                 item['period_warning'] = 'Período no verificable.'
+        _enrich_macro_item(key, item, baseline.get(key))
+        if item.get('status') == 'ok':
+            _MACRO_LAST_GOOD[key] = dict(item)
     valid = sum(item.get('status') == 'ok' and not item.get('period_warning') for item in series.values())
     return {
         'configured': bool(api_key),

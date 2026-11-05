@@ -1,5 +1,13 @@
 # MarketIntel local · versión 6.4
 
+## Ejemplos macro actualizados · 6.4.5
+
+En **Pulso macro**, cada indicador conserva su explicación y añade un ejemplo calculado con las últimas observaciones disponibles, su comparación y sus posibles implicaciones para la Fed, acciones, bonos y dólar. Los ejemplos históricos quedan desplegables y separados del contexto vigente. La síntesis conecta inflación, empleo y actividad; los datos antiguos o sin verificar quedan fuera de esa lectura.
+
+Se comprueban fuentes al abrir, al regresar a la pestaña, al recuperar conexión, cada cinco minutos mientras la aplicación está abierta y al pulsar **Actualizar ahora**. Se reutilizan las conexiones y claves API existentes; no hace falta una clave de inteligencia artificial. La consulta actualiza las explicaciones de forma determinista con los valores recibidos. No hay tarea programada cuando la app está cerrada ni garantía de recibir una publicación al segundo: la fuente puede tener retraso y la caché de proveedores dura cinco minutos.
+
+El período medido, la fecha de publicación (si la fuente la entrega) y la hora de consulta se muestran por separado. Los horarios del contexto macro usan **America/Santo_Domingo**. El consenso, los cambios de revisiones históricas, los comunicados de la Fed y la reacción intradía no se deducen de las cifras: si falta una fuente verificable, se indica. Una comparación entre consultas de este navegador no equivale a un archivo completo de revisiones oficiales.
+
 ## Sincronización opcional · 6.4.4
 
 En **Portafolio → Sincronizar**, crea una sincronización en el dispositivo que ya tiene tus datos. Guarda la clave privada y pégala en **Vincular dispositivo** en https://marketintel-nu.vercel.app y en los otros equipos. También está disponible en el menú de herramientas. Actualiza primero la instalación local completa y sigue usando `INICIAR.bat`, el mismo navegador y `http://localhost:5050`.

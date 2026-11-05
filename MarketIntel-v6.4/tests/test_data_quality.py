@@ -85,13 +85,19 @@ class FinancialDataTests(unittest.TestCase):
 
         requests_module = SlowRequests()
         started = time.perf_counter()
-        result = fetch_fred_snapshot(requests_module, 'test-key')
+        # Measure the independent FRED requests without timing serial retries
+        # of unavailable publisher pages (those paths have separate tests).
+        with patch.object(marketintel_data, 'fetch_bls_cpi_snapshot', side_effect=ValueError('fixture')), \
+             patch.object(marketintel_data, 'fetch_bea_core_pce_snapshot', side_effect=ValueError('fixture')), \
+             patch.object(marketintel_data, 'fetch_michigan_sentiment_snapshot', side_effect=ValueError('fixture')), \
+             patch.object(marketintel_data, 'fetch_ism_snapshot', side_effect=ValueError('fixture')):
+            result = fetch_fred_snapshot(requests_module, 'test-key')
         elapsed = time.perf_counter() - started
 
         self.assertEqual(result['status'], 'partial')
-        self.assertEqual(len(result['series']), 10)
+        self.assertEqual(len(result['series']), len(marketintel_data.FRED_SERIES))
         # This fixture deliberately supplies no ISM report: partial is correct.
-        self.assertLessEqual(requests_module.calls, 16)
+        self.assertEqual(requests_module.calls, len(marketintel_data.FRED_SERIES) - 2)
         self.assertTrue(result['series']['cpi']['history'])
         self.assertLess(elapsed, 0.30)
 
@@ -360,7 +366,7 @@ class FinancialDataTests(unittest.TestCase):
             result=fetch_fred_snapshot(object(),'')
         self.assertEqual(result['series']['cpi']['source'],'BLS')
         self.assertEqual(result['status'],'partial')
-        self.assertEqual(len(result['series']),10)
+        self.assertEqual(len(result['series']),len(marketintel_data.FRED_SERIES))
 
     def test_official_fallbacks_return_periods_sources_and_preliminary_status(self):
         now=datetime.now(timezone.utc)

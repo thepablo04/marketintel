@@ -5,14 +5,14 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'MarketIntel-v6.4'
-VERSION = '6.4.4'
+VERSION = '6.4.5'
 TARGET = ROOT / 'public' / 'descargas' / f'MarketIntel-{VERSION}.zip'
 REPAIR_TARGET = TARGET.with_name(f'Reparar-MarketIntel-{VERSION}.zip')
 TOP = {'index.html', 'requirements.txt', 'LEEME.md', 'VALIDACION-v6.md',
        'INICIAR.bat', 'CONFIGURAR_APIS.bat', 'abrir_marketintel.py',
        'configurar_apis.py', 'servidor.py', 'marketintel_data.py',
        'marketintel_pulse.py', 'marketintel_storage.py', 'marketintel_sync.py'}
-INSTRUCTIONS = '''MarketIntel 6.4.4 · Sincronización entre dispositivos
+INSTRUCTIONS = '''MarketIntel 6.4.5 · Contexto macro con datos publicados
 
 1. Exporta tus datos desde Portafolio > Exportar todo JSON como copia adicional.
 2. Descomprime en una carpeta nueva; conserva todos los archivos y static.
@@ -31,6 +31,14 @@ Las claves API, preferencias, grupos del heatmap y respaldos quedan locales.
 No abras index.html directamente: usa el servidor de INICIAR.bat.
 La sincronización es opcional. Guarda la clave privada; quien la tenga puede
 acceder a tu copia. No se puede recuperar si no queda un dispositivo vinculado.
+
+Pulso macro: los ejemplos se recalculan al abrir, al volver a la pestaña,
+al recuperar conexión y cada 5 minutos mientras la app está abierta.
+También puedes pulsar Actualizar ahora. No hay un proceso programado cuando
+la app está cerrada. Las fuentes pueden publicar con retraso; revisa el período,
+la consulta y las advertencias de cada dato. El consenso, las revisiones oficiales
+y la reacción del mercado se indican como no verificados si falta una fuente.
+Se utilizan las APIs ya configuradas. No necesitas una clave de IA adicional.
 '''
 
 
@@ -59,7 +67,7 @@ def main():
     # A separate flat archive lets an incomplete Windows installation restore
     # this required module without mixing folders or replacing private .env.
     repair_module = SOURCE / 'marketintel_sync.py'
-    repair_instructions = '''Reparar MarketIntel 6.4.4: falta marketintel_sync.py
+    repair_instructions = '''Reparar MarketIntel 6.4.5: falta marketintel_sync.py
 
 1. Cierra la ventana negra de MarketIntel.
 2. Extrae este ZIP. Copia marketintel_sync.py a la carpeta de tu programa,
@@ -68,7 +76,7 @@ def main():
 
 Conserva tus archivos .env. Este paquete no incluye claves ni datos de usuario.
 Si faltan otros archivos, descarga y extrae el paquete completo:
-https://marketintel-nu.vercel.app/descargas/MarketIntel-6.4.4.zip
+https://marketintel-nu.vercel.app/descargas/MarketIntel-6.4.5.zip
 '''
     with zipfile.ZipFile(REPAIR_TARGET, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in [('marketintel_sync.py', repair_module.read_bytes()),
