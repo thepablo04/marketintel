@@ -390,7 +390,7 @@ def select_browser_profile(profiles, preferred=0):
         parent = tk._default_root
         window = tk.Toplevel(parent) if parent else tk.Tk()
         window.title('MarketIntel · Elegir perfil')
-        window.geometry('600x285'); window.resizable(False, False)
+        window.geometry('600x285'); window.minsize(520, 285); window.resizable(True, True)
         if parent:
             window.transient(parent)
         ttk.Label(window, text='¿En qué perfil ves tu portafolio al abrir localhost?',
@@ -409,6 +409,8 @@ def select_browser_profile(profiles, preferred=0):
         ttk.Button(buttons, text='Usar este perfil', command=lambda: choose(dict(profiles[combo.current()]))).pack(side='right')
         ttk.Button(buttons, text='Abrir en el navegador habitual', command=lambda: choose(None)).pack(side='left')
         window.protocol('WM_DELETE_WINDOW', lambda: choose(False))
+        window.update_idletasks()
+        window.geometry('600x'+str(max(285, window.winfo_reqheight())))
         window.grab_set();combo.focus_set()
         window.wait_window()
         return selected[0]
