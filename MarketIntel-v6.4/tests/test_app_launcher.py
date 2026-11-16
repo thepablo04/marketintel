@@ -125,18 +125,94 @@ class LauncherTests(unittest.TestCase):
         self.assertEqual(record['port'],5050)
 
     def test_default_browser_fallback_preserves_localhost_and_does_not_choose_edge(self):
-        with patch.object(launcher,'default_app_browser',return_value=None), \
+        with patch.object(launcher,'app_browser_choice',return_value=None), \
              patch.object(launcher.webbrowser,'open',return_value=True) as browser, \
              patch.object(launcher.subprocess,'Popen') as popen:
             launcher.open_app(5050)
         browser.assert_called_once_with('http://localhost:5050');popen.assert_not_called()
 
     def test_chrome_app_mode_never_creates_a_new_profile(self):
-        with patch.object(launcher,'default_app_browser',return_value='C:/Chrome/chrome.exe'), \
+        profile={'executable':'C:/Chrome/chrome.exe','directory':'Profile 1'}
+        with patch.object(launcher,'app_browser_choice',return_value=profile), \
              patch.object(launcher.subprocess,'Popen') as popen:
             launcher.open_app(5050)
-        self.assertEqual(popen.call_args.args[0],['C:/Chrome/chrome.exe','--app=http://localhost:5050'])
+        self.assertEqual(popen.call_args.args[0],['C:/Chrome/chrome.exe','--profile-directory=Profile 1','--app=http://localhost:5050'])
         self.assertNotIn('shell',popen.call_args.kwargs)
+
+
+class BrowserProfileTests(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name)
+        self.settings=self.root/'MarketIntel'/'navegador.json'
+        self.exe=str(self.root/'Chrome'/'chrome.exe')
+        self.first={'executable':self.exe,'directory':'Default','label':'Chrome · Personal','last_used':False}
+        self.portfolio={'executable':self.exe,'directory':'Profile 1','label':'Chrome · Portafolio','last_used':True}
+
+    def test_discovery_reads_only_metadata_and_existing_non_guest_profiles(self):
+        data=self.root/'Google'/'Chrome'/'User Data';data.mkdir(parents=True)
+        for directory in ('Default','Profile 1','Guest Profile'):(data/directory).mkdir()
+        (data/'Local State').write_text(json.dumps({'profile':{'last_used':'Profile 1','info_cache':{
+            'Default':{'name':'Personal'},'Profile 1':{'name':'Portafolio'},'Profile 2':{'name':'Missing'},
+            'Guest Profile':{'name':'Invitado'},'../../elsewhere':{'name':'Invalid'},
+        }}}))
+        actual=launcher.browser_profiles([self.exe],self.root)
+        self.assertEqual([p['directory'] for p in actual],['Default','Profile 1'])
+        self.assertFalse(actual[0]['last_used']);self.assertTrue(actual[1]['last_used'])
+        self.assertEqual(actual[1]['label'],'Google Chrome · Portafolio (Profile 1)')
+
+    def test_multi_profile_choice_is_pinned_across_later_last_used_changes(self):
+        picker=Mock(return_value=self.portfolio)
+        with patch.object(launcher,'default_app_browser',return_value=self.exe):
+            choice=launcher.app_browser_choice(profiles=[self.first,self.portfolio],settings_path=self.settings,picker=picker)
+        self.assertEqual(choice['directory'],'Profile 1')
+        picker.assert_called_once_with([self.first,self.portfolio],1)
+        # Opening another profile later must not switch the portfolio's browser.
+        self.first['last_used']=True;self.portfolio['last_used']=False
+        never=Mock(side_effect=AssertionError('Saved profile must not prompt'))
+        with patch.object(launcher,'default_app_browser',return_value=self.exe):
+            again=launcher.app_browser_choice(profiles=[self.first,self.portfolio],settings_path=self.settings,picker=never)
+        self.assertEqual(again['directory'],'Profile 1')
+        saved=json.loads(self.settings.read_text())
+        self.assertEqual(set(saved),{'version','mode','executable','directory'})
+
+    def test_user_can_choose_edge_where_portfolio_exists_even_if_default_is_chrome(self):
+        edge={'executable':str(self.root/'msedge.exe'),'directory':'Profile 2','label':'Edge · Inversiones'}
+        with patch.object(launcher,'default_app_browser',return_value=self.exe):
+            launcher.app_browser_choice(force=True,profiles=[self.first,edge],settings_path=self.settings,picker=lambda *_:edge)
+        with patch.object(launcher,'default_app_browser',return_value=self.exe):
+            restored=launcher.app_browser_choice(profiles=[self.first,edge],settings_path=self.settings,picker=Mock(side_effect=AssertionError))
+        self.assertEqual(restored['executable'],edge['executable'])
+
+    def test_unregistered_executable_or_removed_profile_in_settings_is_never_launched(self):
+        self.settings.parent.mkdir()
+        self.settings.write_text(json.dumps({'version':1,'mode':'app','executable':'malicious.exe','directory':'Profile 99'}))
+        with patch.object(launcher,'default_app_browser',return_value=self.exe):
+            choice=launcher.app_browser_choice(profiles=[self.first],settings_path=self.settings,picker=Mock(side_effect=AssertionError))
+        self.assertEqual(choice['executable'],self.exe)
+        self.assertEqual(choice['directory'],'Default')
+
+    def test_user_can_keep_regular_browser_mode_and_force_reselect_later(self):
+        with patch.object(launcher,'default_app_browser',return_value=self.exe):
+            choice=launcher.app_browser_choice(force=True,profiles=[self.first,self.portfolio],settings_path=self.settings,picker=lambda *_:None)
+            self.assertIsNone(choice)
+            self.assertIsNone(launcher.app_browser_choice(profiles=[self.first,self.portfolio],settings_path=self.settings,picker=Mock(side_effect=AssertionError)))
+            picked=launcher.app_browser_choice(force=True,profiles=[self.first,self.portfolio],settings_path=self.settings,picker=lambda *_:self.portfolio)
+        self.assertEqual(picked['directory'],'Profile 1')
+
+    def test_cancel_does_not_replace_a_previous_selection(self):
+        with patch.object(launcher,'default_app_browser',return_value=self.exe):
+            launcher.app_browser_choice(profiles=[self.first],settings_path=self.settings)
+        before=self.settings.read_bytes()
+        with self.assertRaises(launcher.LaunchError):
+            launcher.app_browser_choice(force=True,profiles=[self.first,self.portfolio],settings_path=self.settings,picker=lambda *_:False)
+        self.assertEqual(self.settings.read_bytes(),before)
+
+    def test_missing_browser_metadata_falls_back_without_creating_a_profile(self):
+        self.assertEqual(launcher.browser_profiles([self.exe],self.root),[])
+        self.assertIsNone(launcher.app_browser_choice(profiles=[],settings_path=self.settings))
+        self.assertFalse(self.settings.exists())
 
 
 if __name__=='__main__':

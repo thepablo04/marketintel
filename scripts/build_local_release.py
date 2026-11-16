@@ -5,17 +5,18 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'MarketIntel-v6.4'
-VERSION = '6.5.0'
+VERSION = '6.5.1'
 TARGET = ROOT / 'public' / 'descargas' / f'MarketIntel-{VERSION}.zip'
 REPAIR_TARGET = TARGET.with_name(f'Reparar-MarketIntel-{VERSION}.zip')
+PROFILE_REPAIR_TARGET = TARGET.with_name(f'Reparar-perfil-MarketIntel-{VERSION}.zip')
 TOP = {'index.html', 'requirements.txt', 'LEEME.md', 'VALIDACION-v6.md',
        'INICIAR.bat', 'CONFIGURAR_APIS.bat', 'abrir_marketintel.py',
        'configurar_apis.py', 'servidor.py', 'marketintel_data.py',
        'marketintel_pulse.py', 'marketintel_storage.py', 'marketintel_sync.py',
        'marketintel_reports.py', 'marketintel_report_sources.py', 'iniciar_app.py',
        'CREAR_ACCESO_DIRECTO.bat', 'crear_acceso_directo.ps1',
-       'DETENER_MARKETINTEL.bat', 'detener_app.ps1'}
-INSTRUCTIONS = '''MarketIntel 6.5.0 · Reportes PDF y acceso directo
+       'DETENER_MARKETINTEL.bat', 'detener_app.ps1', 'ELEGIR_PERFIL.bat'}
+INSTRUCTIONS = '''MarketIntel 6.5.1 · Reportes PDF y perfil del acceso directo
 
 1. Exporta tus datos desde Portafolio > Exportar todo JSON como copia adicional.
 2. Descomprime en una carpeta nueva; conserva todos los archivos y static.
@@ -66,7 +67,9 @@ ACCESO DIRECTO
 Conserva esta carpeta en una ubicación fija antes de crear el acceso directo.
 No requiere administrador. El icono arranca el servidor y abre la aplicación;
 si ya responde esta misma instalación, reutiliza el servidor. Conserva el
-navegador predeterminado y localhost para acceder a tus datos habituales.
+perfil elegido y localhost para acceder a tus datos habituales. Si hay varios
+perfiles, elige aquel donde ves tus cuentas al entrar por el navegador.
+Puedes cambiarlo ejecutando ELEGIR_PERFIL.bat. No se copian datos entre perfiles.
 La primera apertura puede necesitar instalar dependencias con conexión.
 Si mueves la carpeta, vuelve a ejecutar CREAR_ACCESO_DIRECTO.bat.
 Cerrar la ventana conserva el servidor en segundo plano. Antes de cambiar de
@@ -100,7 +103,7 @@ def main():
     # A separate flat archive lets an incomplete Windows installation restore
     # this required module without mixing folders or replacing private .env.
     repair_module = SOURCE / 'marketintel_sync.py'
-    repair_instructions = '''Reparar MarketIntel 6.5.0: falta marketintel_sync.py
+    repair_instructions = '''Reparar MarketIntel 6.5.1: falta marketintel_sync.py
 
 1. Cierra la ventana negra de MarketIntel.
 2. Extrae este ZIP. Copia marketintel_sync.py a la carpeta de tu programa,
@@ -109,7 +112,7 @@ def main():
 
 Conserva tus archivos .env. Este paquete no incluye claves ni datos de usuario.
 Si faltan otros archivos, descarga y extrae el paquete completo:
-https://marketintel-nu.vercel.app/descargas/MarketIntel-6.5.0.zip
+https://marketintel-nu.vercel.app/descargas/MarketIntel-6.5.1.zip
 '''
     with zipfile.ZipFile(REPAIR_TARGET, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in [('marketintel_sync.py', repair_module.read_bytes()),
@@ -122,6 +125,35 @@ https://marketintel-nu.vercel.app/descargas/MarketIntel-6.5.0.zip
         assert archive.testzip() is None
         assert archive.read('marketintel_sync.py') == repair_module.read_bytes()
     print(f'Validated repair package: 2 files, {REPAIR_TARGET.stat().st_size} bytes')
+    # Flat repair archive also works with 6.5.0: its launcher reads the version
+    # of servidor.py rather than assuming that the entire app was upgraded.
+    profile_help = '''Reparar el perfil del acceso directo de MarketIntel
+
+Si localhost muestra tus cuentas, pero el icono abre una app vacía:
+1. Copia iniciar_app.py y ELEGIR_PERFIL.bat desde este ZIP a la carpeta de
+   MarketIntel que usa tu icono, junto a INICIAR.bat. Reemplaza iniciar_app.py.
+2. Ejecuta ELEGIR_PERFIL.bat.
+3. Elige el navegador y perfil donde localhost muestra tus cuentas.
+4. Después vuelve a usar el icono habitual del escritorio.
+
+No necesitas cambiar .env, servidor.py ni tus datos. El servidor de la misma
+carpeta puede permanecer abierto. Compatible con la versión 6.5.0 y posteriores.
+La selección queda guardada solo en esta computadora. Si prefieres abrir una
+pestaña normal, puedes elegir Abrir en el navegador habitual.
+No se trasladan, borran ni sustituyen cuentas u operaciones entre perfiles.
+'''
+    with zipfile.ZipFile(PROFILE_REPAIR_TARGET, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        for name in ('iniciar_app.py', 'ELEGIR_PERFIL.bat'):
+            info = zipfile.ZipInfo(name, (2026, 11, 16, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            archive.writestr(info, (SOURCE/name).read_bytes())
+        archive.writestr('LEER-REPARACION-PERFIL.txt', profile_help)
+    with zipfile.ZipFile(PROFILE_REPAIR_TARGET) as archive:
+        assert archive.testzip() is None
+        assert archive.read('iniciar_app.py') == (SOURCE/'iniciar_app.py').read_bytes()
+        assert archive.read('ELEGIR_PERFIL.bat') == (SOURCE/'ELEGIR_PERFIL.bat').read_bytes()
+    print(f'Validated browser-profile repair: 3 files, {PROFILE_REPAIR_TARGET.stat().st_size} bytes')
 
 
 if __name__ == '__main__':

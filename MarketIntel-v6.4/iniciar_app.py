@@ -313,12 +313,163 @@ def default_app_browser():
         return None
 
 
+def installed_app_browsers():
+    """Only registered Chrome/Edge executables; never trust executable paths in settings."""
+    paths = []
+    default = default_app_browser()
+    if default:
+        paths.append(default)
+    if os.name == 'nt':
+        import winreg
+        for name in ('chrome.exe', 'msedge.exe'):
+            for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+                try:
+                    with winreg.OpenKey(hive, 'Software\\Microsoft\\Windows\\CurrentVersion\\App Paths\\' + name) as key:
+                        candidate = winreg.QueryValueEx(key, None)[0]
+                    if Path(candidate).is_file():
+                        paths.append(candidate)
+                except OSError:
+                    pass
+    return list(dict.fromkeys(str(Path(p)) for p in paths))
+
+
+def browser_profiles(browsers=None, local_appdata=None):
+    """Read profile names only. Never access or copy browser databases or credentials."""
+    base = Path(local_appdata or os.environ.get('LOCALAPPDATA') or '')
+    if not str(base) or str(base) == '.':
+        return []
+    result = []
+    for executable in installed_app_browsers() if browsers is None else browsers:
+        executable = str(executable)
+        name = Path(executable).name.lower()
+        if name == 'chrome.exe':
+            brand, relative = 'Google Chrome', 'Google/Chrome/User Data'
+        elif name == 'msedge.exe':
+            brand, relative = 'Microsoft Edge', 'Microsoft/Edge/User Data'
+        else:
+            continue
+        # Alternate channels have distinct data roots. Fall back to the regular
+        # browser if the corresponding Local State is not available.
+        lower = executable.lower().replace('\\', '/')
+        if name == 'chrome.exe':
+            for channel in ('Chrome Beta', 'Chrome Dev', 'Chrome SxS'):
+                if '/'+channel.lower()+'/' in lower:
+                    relative = 'Google/'+channel+'/User Data'; brand = channel
+        else:
+            for channel in ('Edge Beta', 'Edge Dev', 'Edge SxS'):
+                if '/'+channel.lower()+'/' in lower:
+                    relative = 'Microsoft/'+channel+'/User Data'; brand = channel
+        data_root = base / relative
+        try:
+            state_file = data_root / 'Local State'
+            if state_file.stat().st_size > 8_000_000:
+                continue
+            profile_state = json.loads(state_file.read_text(encoding='utf-8')).get('profile', {})
+            entries = profile_state.get('info_cache', {})
+            if not isinstance(entries, dict):
+                continue
+            for directory, meta in entries.items():
+                if (not isinstance(directory, str) or not isinstance(meta, dict)
+                    or not re.fullmatch(r'Default|Profile [0-9]+', directory)
+                    or not (data_root / directory).is_dir() or meta.get('is_omitted')):
+                    continue
+                display = str(meta.get('name') or directory)[:80]
+                result.append({'executable': executable, 'directory': directory,
+                               'label': brand+' · '+display+' ('+directory+')',
+                               'last_used': directory == profile_state.get('last_used')})
+        except (OSError, ValueError, TypeError, AttributeError):
+            continue
+    return result
+
+
+def select_browser_profile(profiles, preferred=0):
+    """A one-time choice avoids guessing where a multi-profile user keeps their portfolio."""
+    try:
+        import tkinter as tk
+        from tkinter import ttk
+        parent = tk._default_root
+        window = tk.Toplevel(parent) if parent else tk.Tk()
+        window.title('MarketIntel · Elegir perfil')
+        window.geometry('600x285'); window.resizable(False, False)
+        if parent:
+            window.transient(parent)
+        ttk.Label(window, text='¿En qué perfil ves tu portafolio al abrir localhost?',
+                  font=('', 12, 'bold'), padding=(18, 16), wraplength=560).pack(fill='x')
+        ttk.Label(window, text='Elige el mismo navegador y perfil donde aparecen tus cuentas.\nSe recordará para las siguientes aperturas del icono.',
+                  padding=(18, 0), wraplength=560).pack(fill='x')
+        combo = ttk.Combobox(window, state='readonly', values=[p['label'] for p in profiles])
+        combo.pack(fill='x', padx=18, pady=18); combo.current(preferred)
+        ttk.Label(window, text='Tus datos permanecen en el navegador. No se trasladan ni se reemplazan.',
+                  padding=(18, 0), wraplength=560).pack(fill='x')
+        selected = [False]
+        def choose(value):
+            selected[0] = value
+            window.destroy()
+        buttons = ttk.Frame(window, padding=(18, 14));buttons.pack(fill='x')
+        ttk.Button(buttons, text='Usar este perfil', command=lambda: choose(dict(profiles[combo.current()]))).pack(side='right')
+        ttk.Button(buttons, text='Abrir en el navegador habitual', command=lambda: choose(None)).pack(side='left')
+        window.protocol('WM_DELETE_WINDOW', lambda: choose(False))
+        window.grab_set();combo.focus_set()
+        window.wait_window()
+        return selected[0]
+    except Exception:
+        # No GUI/profile detection must fall back to the same URL-opening method
+        # as INICIAR.bat, rather than guess a profile or create a new one.
+        return None
+
+
+def app_browser_choice(force=False, *, profiles=None, settings_path=None, picker=None):
+    path = Path(settings_path) if settings_path else log_directory() / 'navegador.json'
+    catalog = browser_profiles() if profiles is None else profiles
+    saved = {}
+    try:
+        if path.stat().st_size <= 4096:
+            saved = json.loads(path.read_text(encoding='utf-8'))
+        if not isinstance(saved, dict):
+            saved = {}
+    except (OSError, ValueError):
+        pass
+    if not force and saved.get('version') == 1:
+        if saved.get('mode') == 'browser':
+            return None
+        for profile in catalog:
+            if (saved.get('executable') == profile['executable']
+                and saved.get('directory') == profile['directory']):
+                return profile
+    if not catalog:
+        return None
+    default = default_app_browser()
+    default_profiles = [p for p in catalog if p['executable'] == default]
+    preferred = next((i for i,p in enumerate(catalog) if p in default_profiles and p.get('last_used')), 0)
+    if not force and len(default_profiles) == 1:
+        choice = default_profiles[0]
+    else:
+        choice = (picker or select_browser_profile)(catalog, preferred)
+    if choice is False:
+        raise LaunchError('Se canceló la selección de perfil. Tus datos no se modificaron.')
+    # Store only a selection, never account records, browser keys or .env data.
+    record = {'version': 1, 'mode': 'app' if choice else 'browser'}
+    if choice:
+        record.update(executable=choice['executable'], directory=choice['directory'])
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        temporary = path.with_suffix('.tmp')
+        with temporary.open('w', encoding='utf-8') as stream:
+            json.dump(record, stream)
+        temporary.replace(path)
+    except OSError:
+        # The current launch may still use the selected profile if persistence
+        # isn't writable; a subsequent run will ask rather than guess.
+        pass
+    return choice
+
+
 def open_app(port):
     url = f'http://localhost:{port}'
-    browser = default_app_browser()
-    if browser:
+    profile = app_browser_choice()
+    if profile:
         try:
-            subprocess.Popen([browser, '--app=' + url], stdin=subprocess.DEVNULL,
+            subprocess.Popen([profile['executable'], '--profile-directory='+profile['directory'], '--app=' + url], stdin=subprocess.DEVNULL,
                              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             return
         except OSError:
@@ -390,6 +541,8 @@ def show_error(message):
 def main():
     progress = Progress()
     try:
+        if '--elegir-perfil' in sys.argv[1:]:
+            app_browser_choice(force=True)
         launch(APP_DIR, progress)
         return 0
     except LaunchError as exc:

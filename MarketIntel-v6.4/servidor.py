@@ -58,7 +58,7 @@ from marketintel_data import (
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 8_500_000
-APP_VERSION = '6.5.0'
+APP_VERSION = '6.5.1'
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 if IS_VERCEL:
     # Vercel's deployed application is read-only. These provider caches are

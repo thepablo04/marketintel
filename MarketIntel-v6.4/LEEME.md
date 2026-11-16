@@ -1,4 +1,12 @@
-# MarketIntel local · versión 6.4
+# MarketIntel local · versión 6.5.1
+
+## Perfil del acceso directo · 6.5.1
+
+Si tus cuentas aparecen en `http://localhost:5050` pero la ventana del icono está vacía, el navegador está usando otro perfil. El acceso directo ahora conserva un perfil explícito de Chrome o Edge y permite seleccionarlo con **ELEGIR_PERFIL.bat**. Elige el navegador y el perfil donde ves tu portafolio al abrir localhost. La selección se recuerda para los siguientes usos del icono, aunque después utilices otro perfil para otras páginas. Se conserva también la posibilidad de abrir en una pestaña habitual.
+
+Solo se leen los nombres de perfiles existentes para elegirlos; no se crean perfiles, se trasladan cuentas ni se modifican las bases de datos del navegador. El archivo `.env` conserva claves y configuración, mientras que las cuentas y operaciones permanecen en el navegador o en la copia vinculada por sincronización.
+
+Para reparar el acceso directo de **6.5.0** basta con el paquete **Reparar-perfil-MarketIntel-6.5.1.zip**: copia `iniciar_app.py` y `ELEGIR_PERFIL.bat` junto al `INICIAR.bat` de esa instalación, reemplaza el launcher y ejecuta `ELEGIR_PERFIL.bat`. Puedes mantener el servidor de esa misma carpeta abierto; no necesitas reemplazar `.env` ni `servidor.py`. El nuevo launcher lee la versión instalada.
 
 ## Reportes y acceso directo · 6.5.0
 
