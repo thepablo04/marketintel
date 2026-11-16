@@ -5,19 +5,24 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'MarketIntel-v6.4'
-VERSION = '6.4.6'
+VERSION = '6.5.0'
 TARGET = ROOT / 'public' / 'descargas' / f'MarketIntel-{VERSION}.zip'
 REPAIR_TARGET = TARGET.with_name(f'Reparar-MarketIntel-{VERSION}.zip')
 TOP = {'index.html', 'requirements.txt', 'LEEME.md', 'VALIDACION-v6.md',
        'INICIAR.bat', 'CONFIGURAR_APIS.bat', 'abrir_marketintel.py',
        'configurar_apis.py', 'servidor.py', 'marketintel_data.py',
-       'marketintel_pulse.py', 'marketintel_storage.py', 'marketintel_sync.py'}
-INSTRUCTIONS = '''MarketIntel 6.4.6 · ISM verificado y Pulso macro sin noticias
+       'marketintel_pulse.py', 'marketintel_storage.py', 'marketintel_sync.py',
+       'marketintel_reports.py', 'marketintel_report_sources.py', 'iniciar_app.py',
+       'CREAR_ACCESO_DIRECTO.bat', 'crear_acceso_directo.ps1',
+       'DETENER_MARKETINTEL.bat', 'detener_app.ps1'}
+INSTRUCTIONS = '''MarketIntel 6.5.0 · Reportes PDF y acceso directo
 
 1. Exporta tus datos desde Portafolio > Exportar todo JSON como copia adicional.
 2. Descomprime en una carpeta nueva; conserva todos los archivos y static.
 3. Si usabas .env, cópialo desde tu carpeta anterior. No está incluido aquí.
-4. Cierra el servidor anterior y ejecuta INICIAR.bat de esta carpeta nueva.
+4. Cierra el servidor anterior. Ejecuta CREAR_ACCESO_DIRECTO.bat una sola vez.
+   Después abre el icono MarketIntel de tu escritorio. También puedes seguir
+   usando INICIAR.bat de esta carpeta nueva.
 5. Usa el mismo navegador y http://localhost:5050 para conservar tus datos.
 6. Abre Sincronizar en Portafolio. Crea tu sincronización en el dispositivo
    que ya tiene tus datos y guarda la clave privada.
@@ -44,13 +49,36 @@ Se retiró el bloque Noticias actuales del mercado de Pulso macro.
 Si el sitio de ISM pide acceso, se consulta su comunicado público en PR Newswire.
 Se verifican el autor, el sector, el mes, el año, la cifra y la publicación.
 La consulta descubre los nuevos informes mensuales; no necesita otra clave API.
+
+REPORTES
+En Inicio están Reporte de apertura y Reporte de sesión. El reporte de apertura
+se genera antes de la apertura regular; el de sesión, desde las 17:00 de Nueva
+York en días bursátiles. Las ventanas se comprueban con el calendario real.
+Cada PDF conserva la hora de corte, las fuentes y los datos que recibiste.
+Se usan conexiones existentes: no contiene cifras de los bocetos ni inventa
+consenso, cobertura, precios o resultados. Si un proveedor no ofrece un dato,
+se identifica como no disponible. La cobertura puede depender de tu plan API.
+El reporte de sesión revisa la watchlist guardada en ese navegador. Una lista
+vacía se mantiene vacía; no se sustituye por empresas de ejemplo.
+Una publicación posterior a las 17:00 queda fuera de ese corte.
+
+ACCESO DIRECTO
+Conserva esta carpeta en una ubicación fija antes de crear el acceso directo.
+No requiere administrador. El icono arranca el servidor y abre la aplicación;
+si ya responde esta misma instalación, reutiliza el servidor. Conserva el
+navegador predeterminado y localhost para acceder a tus datos habituales.
+La primera apertura puede necesitar instalar dependencias con conexión.
+Si mueves la carpeta, vuelve a ejecutar CREAR_ACCESO_DIRECTO.bat.
+Cerrar la ventana conserva el servidor en segundo plano. Antes de cambiar de
+carpeta o actualizar, usa DETENER_MARKETINTEL.bat en la instalación que abriste
+con el acceso directo. Solo detiene ese servidor si comprueba su identidad.
 '''
 
 
 def main():
     files = [SOURCE / name for name in sorted(TOP)]
     files += sorted(p for p in (SOURCE / 'static').rglob('*')
-                    if p.is_file() and p.suffix in {'.js', '.css'}
+                    if p.is_file() and p.suffix in {'.js', '.css', '.ico'}
                     and not any(part.startswith('.') for part in p.relative_to(SOURCE).parts))
     TARGET.parent.mkdir(parents=True, exist_ok=True)
     # Stable timestamps make this artifact reproducible and easy to compare.
@@ -72,7 +100,7 @@ def main():
     # A separate flat archive lets an incomplete Windows installation restore
     # this required module without mixing folders or replacing private .env.
     repair_module = SOURCE / 'marketintel_sync.py'
-    repair_instructions = '''Reparar MarketIntel 6.4.6: falta marketintel_sync.py
+    repair_instructions = '''Reparar MarketIntel 6.5.0: falta marketintel_sync.py
 
 1. Cierra la ventana negra de MarketIntel.
 2. Extrae este ZIP. Copia marketintel_sync.py a la carpeta de tu programa,
@@ -81,7 +109,7 @@ def main():
 
 Conserva tus archivos .env. Este paquete no incluye claves ni datos de usuario.
 Si faltan otros archivos, descarga y extrae el paquete completo:
-https://marketintel-nu.vercel.app/descargas/MarketIntel-6.4.6.zip
+https://marketintel-nu.vercel.app/descargas/MarketIntel-6.5.0.zip
 '''
     with zipfile.ZipFile(REPAIR_TARGET, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in [('marketintel_sync.py', repair_module.read_bytes()),

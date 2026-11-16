@@ -11,6 +11,7 @@ import secrets
 import threading
 import hashlib
 import tempfile
+import base64
 from pathlib import Path
 from urllib.parse import urlsplit
 from datetime import datetime, timezone
@@ -57,7 +58,7 @@ from marketintel_data import (
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 8_500_000
-APP_VERSION = '6.4.6'
+APP_VERSION = '6.5.0'
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 if IS_VERCEL:
     # Vercel's deployed application is read-only. These provider caches are
@@ -305,6 +306,41 @@ def get_macro():
         response = jsonify(_MACRO_RESULT)
         response.headers['Cache-Control'] = 'no-store'
         return response
+
+
+@app.route('/reports/<kind>', methods=['POST'])
+def generate_market_report(kind):
+    if kind not in {'opening', 'closing'}:
+        return jsonify({'error': 'Tipo de reporte no válido.'}), 404
+    body = flask_request.get_json(silent=True)
+    if not isinstance(body, dict):
+        return jsonify({'error': 'Envía una solicitud JSON válida.'}), 400
+    watchlist = body.get('watchlist', [])
+    if not isinstance(watchlist, list) or len(watchlist) > 200:
+        return jsonify({'error': 'La watchlist debe ser una lista de hasta 200 símbolos.'}), 400
+    if any(not isinstance(ticker, str) for ticker in watchlist):
+        return jsonify({'error': 'Cada símbolo de la watchlist debe ser texto.'}), 400
+    try:
+        tickers = list(dict.fromkeys(normalize_ticker(ticker) for ticker in watchlist))
+    except ValueError:
+        return jsonify({'error': 'La watchlist contiene un símbolo inválido.'}), 400
+    if not HAS_REQUESTS:
+        return jsonify({'error': 'Falta requests. Instala los requisitos de la aplicación.'}), 503
+    try:
+        from marketintel_reports import build_report, render_report_pdf
+        report = build_report(kind, tickers, requests_module=http_req,
+                              fmp_key=FMP_API_KEY, fred_key=FRED_API_KEY)
+        pdf = render_report_pdf(report)
+        response = jsonify({'report': report, 'pdf_base64': base64.b64encode(pdf).decode('ascii'),
+                            'filename': f'MarketIntel-{kind}-{report["session_date"]}.pdf'})
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+    except ValueError as exc:
+        return jsonify({'error': str(exc)}), 409
+    except Exception:
+        # Provider errors must never expose credentials, URLs with API keys or
+        # traceback details through a public endpoint.
+        return jsonify({'error': 'No se pudo generar el reporte. Reintenta en unos minutos.'}), 503
 
 
 @app.route('/news')

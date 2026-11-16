@@ -1,5 +1,17 @@
 # MarketIntel local · versión 6.4
 
+## Reportes y acceso directo · 6.5.0
+
+En **Inicio**, los botones **Reporte de apertura** y **Reporte de sesión** generan un PDF con los datos que pudieron verificarse, sus períodos, fuentes, horas y cobertura. El reporte de apertura usa la ventana previa a la apertura regular; el de sesión se genera desde las **17:00 de Nueva York**, en días bursátiles. La fecha, el horario de verano, los festivos y los cierres anticipados se comprueban con el calendario de la bolsa. La generación es manual.
+
+Se incluyen referencias del S&P 500, Nasdaq 100 y oro, participación de las acciones con datos disponibles y las siete magníficas. La macro aparece cuando hay una publicación importante verificable del día. El de sesión consulta las empresas de la watchlist guardada en el navegador; los resultados publicados, pendientes y no verificables se distinguen. Una publicación posterior al corte no se presenta como conocida a las 17:00. El último precio de premercado no garantiza el precio de apertura.
+
+Se reutiliza la configuración de las APIs actuales. La cobertura de índices completos, cotizaciones extendidas y resultados puede depender del proveedor y del plan: un dato ausente se muestra como ausente, sin completar el reporte con números de ejemplo. El PDF se genera en el servidor y se descarga desde la vista previa tanto en local como en Vercel.
+
+Para abrir la versión local con un clic, guarda la carpeta completa en un lugar fijo y ejecuta **CREAR_ACCESO_DIRECTO.bat** una vez. Luego usa el icono **MarketIntel** del escritorio. Arranca el servidor automáticamente y usa tu navegador predeterminado con `http://localhost:5050`; si ya está abierta esa misma instalación, la reutiliza. En Edge o Chrome se utiliza una ventana de aplicación cuando es posible, conservando el perfil. La primera apertura puede necesitar conexión para instalar dependencias. Si mueves la carpeta, crea de nuevo el acceso directo. `INICIAR.bat` sigue disponible.
+
+Cerrar la ventana del navegador conserva el servidor en segundo plano. Para detener el servidor iniciado por el acceso directo antes de actualizar o mover la carpeta, ejecuta **DETENER_MARKETINTEL.bat** de esa instalación. Comprueba su identidad antes de detenerlo; un servidor iniciado manualmente se cierra desde su propia consola.
+
 ## Corrección de ISM y Pulso macro · 6.4.6
 
 Se retiró **Noticias actuales del mercado** de Pulso macro. Los indicadores y sus ejemplos mantienen la actualización automática.
