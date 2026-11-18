@@ -67,6 +67,51 @@ class ReportSourceTests(unittest.TestCase):
             self.assertEqual(row['coverage_pct'], 50)
             self.assertEqual(row['as_of'], '2026-11-16T21:00:00+00:00')
 
+    def test_one_minute_bars_use_one_minute_completion_and_never_future_close(self):
+        self.chart['meta']['dataGranularity']='1m'
+        observed=sources._observation(self.chart,'opening',self.session,self.pre_cutoff)
+        self.assertEqual(observed,(150,100,datetime(2026,11,16,14,26,tzinfo=UTC)))
+        self.chart['timestamp']=[self.pre_cutoff.timestamp()]
+        self.chart['indicators']['quote'][0]['close']=[999]
+        self.assertIsNone(sources._observation(self.chart,'opening',self.session,self.pre_cutoff))
+
+    def test_irregular_terminal_quote_keeps_its_actual_time(self):
+        stamp=datetime(2026,11,16,14,24,17,tzinfo=UTC)
+        self.chart['timestamp']=[stamp.timestamp()]
+        self.chart['indicators']['quote'][0]['close']=[105]
+        observed=sources._observation(self.chart,'opening',self.session,self.pre_cutoff)
+        self.assertEqual(observed,(105,100,stamp))
+
+    def test_fmp_fallback_requires_matching_symbol_recent_premarket_and_same_session_baseline(self):
+        stamp=datetime(2026,11,16,14,28,tzinfo=UTC)
+        self.chart['meta']['symbol']='NVDA'
+        good={'symbol':'NVDA','price':103,'timestamp':stamp.timestamp()*1000}
+        self.assertEqual(sources._fmp_observation(good,self.chart,self.session,self.pre_cutoff),(103,100,stamp))
+        for patch_row in ({'timestamp':stamp.timestamp()-3600},{'timestamp':stamp.timestamp()+120},
+                          {'symbol':'AAPL'},{'price':-1},{'currency':'EUR'}):
+            self.assertIsNone(sources._fmp_observation(dict(good,**patch_row),self.chart,self.session,self.pre_cutoff))
+
+    def test_fmp_enriches_only_missing_valid_quotes_without_double_counting(self):
+        old=deepcopy(self.chart);old['timestamp']=[];old['meta']['symbol']='AAPL'
+        now=datetime(2026,11,16,14,28,tzinfo=UTC)
+        with patch.object(sources,'_members',return_value={'symbols':['NVDA','AAPL'],'source':'fixture','source_url':'https://example.com'}), \
+             patch.object(sources,'_batch',return_value={'NVDA':self.chart,'AAPL':old}), \
+             patch.object(sources,'_fmp_trades',return_value={'AAPL':{'symbol':'AAPL','price':98,'timestamp':now.timestamp()}}) as fallback:
+            rows=sources.fetch_report_breadth(object(),'opening',self.session,self.pre_cutoff,fmp_key='fixture')
+        self.assertEqual(fallback.call_args.args[1],('AAPL',))
+        for row in rows:
+            self.assertEqual((row['valid'],row['up'],row['down'],row['missing']),(2,0,2,0))
+            self.assertEqual(row['alternative_valid'],1)
+
+    def test_missing_key_does_not_query_alternative_or_relax_stale_data(self):
+        old=deepcopy(self.chart);old['timestamp']=[]
+        with patch.object(sources,'_members',return_value={'symbols':['NVDA'],'source':'fixture','source_url':'https://example.com'}), \
+             patch.object(sources,'_batch',return_value={'NVDA':old}), \
+             patch.object(sources,'_fmp_trades') as alternative:
+            result=sources.fetch_report_breadth(object(),'opening',self.session,self.pre_cutoff)
+        alternative.assert_not_called()
+        self.assertTrue(all(row['valid']==0 and row['missing']==1 for row in result))
+
 
 class WatchlistCalendarTests(unittest.TestCase):
     def setUp(self):

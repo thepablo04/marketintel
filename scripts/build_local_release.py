@@ -5,18 +5,19 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / 'MarketIntel-v6.4'
-VERSION = '6.5.1'
+VERSION = '6.5.2'
 TARGET = ROOT / 'public' / 'descargas' / f'MarketIntel-{VERSION}.zip'
 REPAIR_TARGET = TARGET.with_name(f'Reparar-MarketIntel-{VERSION}.zip')
 PROFILE_REPAIR_TARGET = TARGET.with_name(f'Reparar-perfil-MarketIntel-{VERSION}.zip')
+REPORT_UPDATE_TARGET = TARGET.with_name(f'Actualizar-reportes-MarketIntel-{VERSION}.zip')
 TOP = {'index.html', 'requirements.txt', 'LEEME.md', 'VALIDACION-v6.md',
        'INICIAR.bat', 'CONFIGURAR_APIS.bat', 'abrir_marketintel.py',
        'configurar_apis.py', 'servidor.py', 'marketintel_data.py',
        'marketintel_pulse.py', 'marketintel_storage.py', 'marketintel_sync.py',
-       'marketintel_reports.py', 'marketintel_report_sources.py', 'iniciar_app.py',
+       'marketintel_reports.py', 'marketintel_report_sources.py', 'marketintel_report_pdf.py', 'iniciar_app.py',
        'CREAR_ACCESO_DIRECTO.bat', 'crear_acceso_directo.ps1',
        'DETENER_MARKETINTEL.bat', 'detener_app.ps1', 'ELEGIR_PERFIL.bat'}
-INSTRUCTIONS = '''MarketIntel 6.5.1 · Reportes PDF y perfil del acceso directo
+INSTRUCTIONS = '''MarketIntel 6.5.2 · Reportes visuales y cobertura identificada
 
 1. Exporta tus datos desde Portafolio > Exportar todo JSON como copia adicional.
 2. Descomprime en una carpeta nueva; conserva todos los archivos y static.
@@ -62,6 +63,13 @@ se identifica como no disponible. La cobertura puede depender de tu plan API.
 El reporte de sesión revisa la watchlist guardada en ese navegador. Una lista
 vacía se mantiene vacía; no se sustituye por empresas de ejemplo.
 Una publicación posterior a las 17:00 queda fuera de ese corte.
+Los PDF recuperan el diseño aprobado: tarjetas, colores, barras y una explicación
+que conecta índices, las siete magníficas y la participación disponible.
+La consulta de acciones usa ventanas de un minuto; los datos sin una cotización
+reciente siguen fuera de los conteos. Con FMP configurado se comprueba además
+su fuente de operaciones fuera de horario si el plan permite acceder a ella.
+La cobertura siempre se indica; una muestra parcial no se convierte en un
+conteo completo de todo el índice. No se garantiza cobertura del 100%.
 
 ACCESO DIRECTO
 Conserva esta carpeta en una ubicación fija antes de crear el acceso directo.
@@ -103,7 +111,7 @@ def main():
     # A separate flat archive lets an incomplete Windows installation restore
     # this required module without mixing folders or replacing private .env.
     repair_module = SOURCE / 'marketintel_sync.py'
-    repair_instructions = '''Reparar MarketIntel 6.5.1: falta marketintel_sync.py
+    repair_instructions = '''Reparar MarketIntel 6.5.2: falta marketintel_sync.py
 
 1. Cierra la ventana negra de MarketIntel.
 2. Extrae este ZIP. Copia marketintel_sync.py a la carpeta de tu programa,
@@ -112,7 +120,7 @@ def main():
 
 Conserva tus archivos .env. Este paquete no incluye claves ni datos de usuario.
 Si faltan otros archivos, descarga y extrae el paquete completo:
-https://marketintel-nu.vercel.app/descargas/MarketIntel-6.5.1.zip
+https://marketintel-nu.vercel.app/descargas/MarketIntel-6.5.2.zip
 '''
     with zipfile.ZipFile(REPAIR_TARGET, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
         for name, data in [('marketintel_sync.py', repair_module.read_bytes()),
@@ -154,6 +162,42 @@ No se trasladan, borran ni sustituyen cuentas u operaciones entre perfiles.
         assert archive.read('iniciar_app.py') == (SOURCE/'iniciar_app.py').read_bytes()
         assert archive.read('ELEGIR_PERFIL.bat') == (SOURCE/'ELEGIR_PERFIL.bat').read_bytes()
     print(f'Validated browser-profile repair: 3 files, {PROFILE_REPAIR_TARGET.stat().st_size} bytes')
+    report_help = '''Actualizar solo los reportes de MarketIntel · 6.5.2
+
+Compatible con la aplicación 6.5.0 y 6.5.1. El acceso directo y el perfil elegido
+se conservan, igual que el archivo .env, las cuentas, operaciones y sincronización.
+
+1. Detén el servidor: usa DETENER_MARKETINTEL.bat si se inició desde el icono,
+   o cierra la ventana negra si lo iniciaste con INICIAR.bat.
+2. Extrae este ZIP y copia TODO su contenido a tu carpeta actual de MarketIntel,
+   junto a servidor.py e INICIAR.bat. Acepta reemplazar los archivos. Conserva
+   static como subcarpeta: su archivo va dentro del static que ya tienes.
+3. Abre el icono habitual y recarga la aplicación con Ctrl+F5.
+4. Genera un reporte nuevo. En la vista previa aparecerá Formato del reporte: 6.5.2.
+
+No tienes que cambiar .env ni servidor.py, reinstalar dependencias, crear otra
+cuenta, elegir de nuevo el perfil o recrear el icono. El formato 6.5.2 del PDF
+es independiente de la versión del servidor que muestra /health.
+
+La consulta usa cotizaciones de un minuto y aprovecha la fuente alternativa FMP
+solo si tu clave y plan la permiten. Los precios antiguos, futuros o de otra
+sesión se excluyen. La cobertura puede seguir siendo parcial y siempre se muestra.
+No se trasladan datos entre perfiles ni se completan cifras ausentes con ejemplos.
+'''
+    report_files = ['marketintel_reports.py', 'marketintel_report_sources.py',
+                    'marketintel_report_pdf.py', 'static/marketintel-reports.js']
+    with zipfile.ZipFile(REPORT_UPDATE_TARGET, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+        for name in report_files:
+            info = zipfile.ZipInfo(name, (2026, 11, 18, 0, 0, 0))
+            info.compress_type = zipfile.ZIP_DEFLATED
+            info.external_attr = 0o644 << 16
+            archive.writestr(info, (SOURCE/name).read_bytes())
+        archive.writestr('LEER-ACTUALIZACION-REPORTES.txt', report_help)
+    with zipfile.ZipFile(REPORT_UPDATE_TARGET) as archive:
+        assert archive.testzip() is None
+        for name in report_files:
+            assert archive.read(name) == (SOURCE/name).read_bytes()
+    print(f'Validated report update: 5 files, {REPORT_UPDATE_TARGET.stat().st_size} bytes')
 
 
 if __name__ == '__main__':

@@ -76,6 +76,7 @@
     const meta = element('div', 'mi-report-meta');
     meta.append(element('span', '', 'Sesión: ' + text(report.session_date)));
     meta.append(element('span', '', 'Corte: ' + timestamp(report.cutoff_at)));
+    if (report.report_version) meta.append(element('span', '', 'Formato del reporte: ' + text(report.report_version)));
     if (report.generated_at) meta.append(element('span', '', 'Generado: ' + timestamp(report.generated_at)));
     body.append(meta);
     if (watchWarning) notice(body, watchWarning, 'is-warning');
@@ -112,8 +113,9 @@
         const card = element('article', 'mi-report-breadth'); card.append(element('h4', '', text(item.label || item.index)));
         const counts = item.status === 'unavailable' || Number(item.valid) === 0 ? [null, null, null, item.missing] : [item.up, item.down, item.unchanged, item.missing];
         table(card, ['Al alza', 'A la baja', 'Sin cambio', 'Sin dato'], [counts.map(v => number(v) ? numeric(v) : 'Sin dato')]);
-        const coverage = number(item.valid) && number(item.total) ? numeric(item.valid) + ' de ' + numeric(item.total) + ' valores con dato' : 'Cobertura no verificada';
+        const coverage = number(item.valid) && number(item.total) && Number(item.total)>0 ? numeric(item.valid) + ' de ' + numeric(item.total) + ' valores con dato (' + numeric(Number(item.valid)/Number(item.total)*100) + '% de cobertura)' : 'Cobertura no verificada';
         notice(card, coverage + '. Los valores sin dato quedan fuera de los porcentajes.');
+        if (number(item.valid) && number(item.total) && Number(item.valid)<Number(item.total)) notice(card, 'Esta es una muestra: todavía no se puede cerrar el balance de todo el índice.', 'is-warning');
         if (item.status === 'unavailable' || Number(item.valid) === 0) notice(card, 'No hay cotizaciones verificables suficientes para contar subidas y bajadas en esta consulta.', 'is-warning');
         if (item.warning || item.note || item.error || item.reason) notice(card, text(item.warning || item.note || item.error || item.reason), 'is-warning');
         card.append(source(item)); host.append(card);

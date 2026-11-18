@@ -1,4 +1,12 @@
-# MarketIntel local · versión 6.5.1
+# MarketIntel local · versión 6.5.2
+
+## Reportes legibles y cobertura explícita · 6.5.2
+
+Los PDF recuperan el diseño aprobado: resumen con tarjetas y una lectura conectada, participación con barras y cobertura, tabla de las siete magníficas con colores y horas. La conclusión distingue el movimiento de los índices del de sus empresas y limita las afirmaciones cuando faltan datos. El bloque macro sigue apareciendo solo si existe una publicación relevante confirmada; los reportes de watchlist conservan los estados publicados, pendientes y sin verificar.
+
+La participación se consulta en intervalos de un minuto y reintenta solo respuestas no recibidas. Se mantiene el límite de antigüedad de veinte minutos. Si FMP está configurado, se comprueban las operaciones fuera de horario que entregue ese proveedor, con su símbolo, sesión y hora; una clave sin acceso a ese servicio no produce cifras inventadas. La cobertura puede seguir siendo parcial porque algunas acciones no tienen una cotización reciente disponible. El PDF muestra la cobertura del universo completo y los porcentajes calculados únicamente sobre la muestra válida.
+
+Para actualizar una instalación 6.5.0/6.5.1 sin cambiar el perfil ni el servidor, usa **Actualizar-reportes-MarketIntel-6.5.2.zip**. Detén el servidor, copia los archivos conservando la subcarpeta `static`, vuelve a abrir el icono y recarga con Ctrl+F5. Conserva `.env`, `servidor.py` y el acceso directo. La vista previa identifica **Formato del reporte: 6.5.2** aunque el servidor anterior conserve su propia versión.
 
 ## Perfil del acceso directo · 6.5.1
 

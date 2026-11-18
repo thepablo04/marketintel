@@ -99,9 +99,16 @@ def _bars(chart):
 
 
 def _last_bar(chart, begin, end, freshness=timedelta(minutes=20)):
-    # 5-minute candle values become usable only once their entire window ends.
-    rows = [(date+timedelta(minutes=5), price) for date, price in _bars(chart)
-            if date >= begin and date+timedelta(minutes=5) <= end]
+    seconds = {'1m':60, '5m':300}.get((chart.get('meta') or {}).get('dataGranularity', '5m'))
+    if seconds is None:
+        return None
+    rows = []
+    for date, price in _bars(chart):
+        # The irregular terminal point is a quote, not a candle start. Adding
+        # five minutes would falsely make its timestamp and freshness newer.
+        completed = date+timedelta(seconds=seconds) if date.timestamp()%seconds == 0 else date
+        if date >= begin and completed <= end:
+            rows.append((completed,price))
     if not rows:
         return None
     date, price = rows[-1]
@@ -316,6 +323,102 @@ def _watchlist_reports(requests, tickers, cutoff, known, fmp_key=''):
     return output
 
 
+def explain_report(report):
+    """Connect observed facts; never infer causation or extrapolate missing stocks."""
+    def fmt(value, signed=False):
+        number = _number(value)
+        if number is None:
+            return 'sin dato'
+        return ((('+' if number>0 else '') if signed else '')+f'{number:,.2f}').replace(',','~').replace('.',',').replace('~','.')
+    closing=report.get('kind')=='closing'
+    scope='índices' if closing else 'futuros'
+    valid=[q for q in (report.get('quotes') or [])[:2]
+           if q.get('status')=='ok' and _number(q.get('change_pct')) is not None]
+    points=[]
+    if len(valid)==2:
+        a,b=valid
+        av,bv=a['change_pct'],b['change_pct']
+        if av>0 and bv>0:
+            headline='Los '+scope+(' cerraron al alza.' if closing else ' avanzan.')
+            title='S&P 500 y Nasdaq 100 acompañan la subida'
+            comparison='El Nasdaq 100 registra un avance mayor.' if bv>av else 'El S&P 500 registra un avance mayor.' if av>bv else 'Sus avances son similares a la precisión disponible.'
+        elif av<0 and bv<0:
+            headline='Los '+scope+(' cerraron a la baja.' if closing else ' retroceden.')
+            title='Los dos índices muestran caídas'
+            comparison='La caída es mayor en el Nasdaq 100.' if bv<av else 'La caída es mayor en el S&P 500.' if av<bv else 'Sus caídas son similares a la precisión disponible.'
+        elif av==0 and bv==0:
+            headline='Los '+scope+' se mantienen sin cambios.'
+            title='Las dos referencias se mantienen estables'
+            comparison='No muestran variación en la precisión suministrada por la fuente.'
+        else:
+            headline='Los '+scope+' muestran movimientos distintos.'
+            title='La dirección de los índices no es uniforme'
+            comparison='Conviene leer cada referencia por separado: no hay una subida o caída común de ambos.'
+        index_text='S&P 500: '+fmt(av,True)+'%; Nasdaq 100: '+fmt(bv,True)+'%. '+comparison
+    elif valid:
+        headline='Falta una referencia para completar la lectura.'
+        title='La comparación entre índices está incompleta'
+        index_text=valid[0]['label']+' muestra '+fmt(valid[0]['change_pct'],True)+'%. La otra referencia no tiene una cotización válida para este corte.'
+    else:
+        headline='No hay cotizaciones suficientes para resumir el mercado.'
+        title='Faltan las dos referencias del mercado'
+        index_text='No se interpreta la dirección del S&P 500 ni del Nasdaq 100 con precios ausentes o de otra ventana.'
+    gold=next((q for q in report.get('quotes',[]) if q.get('ticker')=='GC=F' and q.get('status')=='ok'),None)
+    if gold and _number(gold.get('change_pct')) is not None:
+        index_text+=' El futuro del oro '+('sube ' if gold['change_pct']>0 else 'baja ' if gold['change_pct']<0 else 'no cambia: ')+fmt(abs(gold['change_pct']))+'%.'
+    points.append({'title':title,'text':index_text})
+    seven=[q for q in report.get('magnificent_seven',[]) if q.get('status')=='ok' and _number(q.get('change_pct')) is not None]
+    up=[q for q in seven if q['change_pct']>0];down=[q for q in seven if q['change_pct']<0]
+    mixed=bool(up and down)
+    if seven:
+        if len(seven)==7:
+            seven_text=f'{len(up)} de las siete suben, {len(down)} bajan y {7-len(up)-len(down)} no cambian.'
+        else:
+            seven_text=f'De {len(seven)} con datos, {len(up)} suben y {len(down)} bajan. Faltan {7-len(seven)} cotizaciones; no se completa ese grupo con precios anteriores.'
+        if up:
+            best=max(up,key=lambda q:q['change_pct']);seven_text+=' '+str(best.get('ticker'))+' destaca al alza ('+fmt(best['change_pct'],True)+'%).'
+        if down:
+            worst=min(down,key=lambda q:q['change_pct']);seven_text+=' '+str(worst.get('ticker'))+' registra la mayor caída del grupo ('+fmt(worst['change_pct'],True)+'%).'
+        seven_title='Las grandes acciones no se mueven todas igual' if mixed else 'Así participan las siete magníficas'
+    else:
+        seven_title='Las siete todavía no tienen datos comparables'
+        seven_text='No hay precios válidos para resumir este grupo en la ventana del reporte.'
+    points.append({'title':seven_title,'text':seven_text})
+    breadth=report.get('breadth') or []
+    incomplete=not breadth or any(not row.get('total') or row.get('valid',0)<row['total'] for row in breadth)
+    pieces=[]
+    for row in breadth:
+        total,observed=row.get('total'),row.get('valid',0)
+        if total:
+            pieces.append(str(row.get('label'))+': '+str(observed)+'/'+str(total)+' valores ('+fmt(observed/total*100)+'% de cobertura)')
+        else:
+            pieces.append(str(row.get('label'))+': composición sin verificar')
+    coverage='; '.join(pieces)+'.' if pieces else 'No hay una composición y muestra verificables de los índices.'
+    coverage+=(' Los conteos describen solo los valores observados; falta información para cerrar el balance del conjunto.' if incomplete else
+               'Los conteos cubren el universo consultado. El índice pondera sus componentes; el número de acciones no equivale al aporte en puntos.')
+    points.append({'title':'La participación tiene cobertura parcial' if incomplete else 'La participación cubre el universo consultado','text':coverage})
+    if mixed and len(valid)==2 and all(q['change_pct']>0 for q in valid):
+        synthesis='Los '+scope+' suben y las siete van divididas. Las empresas no pesan igual en cada índice.'
+    elif mixed and len(valid)==2 and all(q['change_pct']<0 for q in valid):
+        synthesis='Los '+scope+' bajan y algunas de las siete suben. Las empresas no pesan igual en cada índice.'
+    else:
+        synthesis='La lectura conecta las referencias de los índices con las acciones que tienen datos válidos al corte.'
+    if incomplete:
+        synthesis+=' La cobertura incompleta limita la conclusión sobre el conjunto.'
+    macro=report.get('macro') or []
+    if macro:
+        item=macro[0]
+        points.insert(0,{'title':str(item.get('title') or 'Publicación macro confirmada'),
+                         'text':'Resultado: '+str(item.get('actual') or 'consultar comunicado')+'. '+('Sin consenso verificado no se califica como sorpresa.' if item.get('consensus') is None else 'Consenso: '+str(item['consensus'])+'.')})
+        # Three takeaways fit the approved overview. The complete seven-company
+        # interpretation remains on its own page and in structured analysis.
+        overview=[points[0],points[1],points[-1]]
+    else:
+        overview=points
+    return {'headline':headline,'key_points':overview,'synthesis':synthesis,
+            'coverage_note':coverage,'seven_title':seven_title,'seven_text':seven_text}
+
+
 def build_report(kind, watchlist, *, requests_module, fmp_key='', fred_key='', now=None):
     if kind not in ('opening','closing'):
         raise ValueError('Tipo de reporte no válido.')
@@ -343,7 +446,7 @@ def build_report(kind, watchlist, *, requests_module, fmp_key='', fred_key='', n
     symbols=['ES=F','NQ=F','GC=F'] if kind=='opening' else ['^GSPC','^NDX','GC=F']
     wanted=list(dict.fromkeys(symbols+[t for t,_ in MAG7]+tickers[:12]))
     # All independent provider work runs concurrently and stays bounded.
-    tasks={'breadth':lambda:fetch_report_breadth(requests_module,kind,session,cutoff,now=now),
+    tasks={'breadth':lambda:fetch_report_breadth(requests_module,kind,session,cutoff,now=now,fmp_key=fmp_key),
            'charts':lambda:_parallel(lambda t:_chart(requests_module,t),wanted,8),
            'macro':lambda:_macro(requests_module,cutoff)}
     if kind=='closing':tasks['watch']=lambda:_watchlist_reports(requests_module,tickers,cutoff,{},fmp_key=fmp_key)
@@ -391,98 +494,22 @@ def build_report(kind, watchlist, *, requests_module, fmp_key='', fred_key='', n
     if kind=='closing' and not tickers:warnings.append('La watchlist de este navegador está vacía; no se sustituyó por una lista de ejemplo.')
     if len(tickers)>12:warnings.append('La verificación individual de noticias cubrió hasta 12 empresas por generación; las demás quedan sin confirmar.')
     if kind=='closing' and any(r['status']=='unverified' for r in watch):warnings.append('No se pudo confirmar la ausencia de resultados en toda la watchlist. Los estados sin verificar no equivalen a ausencia de publicaciones.')
-    summary=[]
-    for q in market:
-        if q['status']=='ok':
-            direction='sube' if q['change']>0 else 'baja' if q['change']<0 else 'no cambia'
-            summary.append(q['label']+': '+direction+' '+f"{abs(q['change_pct']):.2f}%"+' frente a su referencia anterior. '+('Cierre regular.' if kind=='closing' and q['ticker']!='GC=F' else 'Precio observado al corte.'))
-    summary.append('Los movimientos describen lo observado; no garantizan el precio de apertura ni una reacción futura.')
     partial=bool(warnings) or any(r['status']!='ok' for r in known.values())
-    return {'kind':kind,'title':'Reporte de apertura' if kind=='opening' else 'Resumen de sesión · 17:00 NY',
+    report={'kind':kind,'report_version':'6.5.2','title':'Reporte de apertura' if kind=='opening' else 'Resumen de sesión · 17:00 NY',
             'status':'partial' if partial else 'ok','session_date':session['date'],'generated_at':_iso(now),
             'cutoff_at':_iso(cutoff),'session':{'open_at':session['open_at'],'close_at':session['close_at'],'previous_date':session.get('previous_date')},
-            'summary':summary,'quotes':market,'breadth':breadth,'magnificent_seven':list(known.values()),
+            'quotes':market,'breadth':breadth,'magnificent_seven':list(known.values()),
             'macro':macro,'watchlist_reports':watch,'watchlist':tickers,'warnings':warnings,
             'notes':['Los precios y titulares pueden llevar retraso; se muestran las horas recibidas.',
                      'Los futuros ES/NQ y GC no son los índices al contado ni oro XAU/USD.',
                      'El consenso no se estima cuando no hay una fuente verificable.']}
+    report['analysis']=explain_report(report)
+    report['summary']=[point['title']+'. '+point['text'] for point in report['analysis']['key_points']]
+    report['summary'].append(report['analysis']['synthesis'])
+    return report
 
 
 def render_report_pdf(report):
-    """A self-contained PDF of the exact returned snapshot, not another fetch."""
-    from reportlab.lib import colors
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import ParagraphStyle
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer, PageBreak, KeepTogether
-    from xml.sax.saxutils import escape
-    stream=BytesIO();width,height=A4;inner=width-80
-    navy=colors.HexColor('#0b1826');teal=colors.HexColor('#087e8b');muted=colors.HexColor('#536579');pale=colors.HexColor('#f0f5f8')
-    normal=ParagraphStyle('normal',fontName='Helvetica',fontSize=9,leading=13,textColor=navy)
-    small=ParagraphStyle('small',parent=normal,fontSize=7.5,leading=10,textColor=muted)
-    heading=ParagraphStyle('heading',parent=normal,fontName='Helvetica-Bold',fontSize=20,leading=26,spaceAfter=15)
-    sub=ParagraphStyle('sub',parent=normal,fontName='Helvetica-Bold',fontSize=12,leading=17,spaceAfter=8,textColor=teal)
-    def p(text,style=normal):return Paragraph(escape(str('Sin dato verificado' if text is None or text=='' else text)),style)
-    def number(v,suffix='',signed=False):
-        v=_number(v)
-        return ('Sin dato' if v is None else (f'{v:+,.2f}' if signed else f'{v:,.2f}').replace(',','~').replace('.',',').replace('~','.')+suffix)
-    def when(value):
-        date=_stamp(value)
-        return date.astimezone(NY).strftime('%d/%m/%Y %H:%M NY') if date else 'Hora no verificada'
-    def table(rows,widths):
-        th=ParagraphStyle('th',parent=small,textColor=colors.white,fontName='Helvetica-Bold')
-        t=Table([[p(v,th if index==0 else small) for v in row] for index,row in enumerate(rows)],colWidths=widths,repeatRows=1,hAlign='LEFT')
-        t.setStyle(TableStyle([('BACKGROUND',(0,0),(-1,0),navy),('TEXTCOLOR',(0,0),(-1,0),colors.white),
-            ('FONTNAME',(0,0),(-1,0),'Helvetica-Bold'),('VALIGN',(0,0),(-1,-1),'TOP'),
-            ('ROWBACKGROUNDS',(0,1),(-1,-1),[pale,colors.white]),('LEFTPADDING',(0,0),(-1,-1),9),
-            ('RIGHTPADDING',(0,0),(-1,-1),9),('TOPPADDING',(0,0),(-1,-1),10),('BOTTOMPADDING',(0,0),(-1,-1),10)]))
-        return t
-    def header(canvas,doc):
-        canvas.saveState();canvas.setFillColor(navy);canvas.rect(0,height-142,width,142,fill=1,stroke=0)
-        canvas.setFillColor(colors.HexColor('#22d3ee'));canvas.roundRect(40,height-59,27,27,6,fill=1,stroke=0)
-        canvas.setFillColor(navy);canvas.setFont('Helvetica-Bold',11);canvas.drawString(45,height-50,'MI')
-        canvas.setFillColor(colors.white);canvas.setFont('Helvetica-Bold',14);canvas.drawString(77,height-49,'MarketIntel')
-        canvas.setFont('Helvetica-Bold',22);canvas.drawString(40,height-94,report.get('title','Reporte')[:48])
-        canvas.setFont('Helvetica',9);canvas.drawString(40,height-117,'Sesión '+str(report.get('session_date',''))+' | Corte '+when(report.get('cutoff_at')))
-        canvas.setFillColor(muted);canvas.setFont('Helvetica',7);canvas.drawString(40,27,'Fuentes y horas según disponibilidad. Datos ausentes identificados; sin cifras precargadas.')
-        canvas.drawRightString(width-40,27,str(doc.page));canvas.restoreState()
-    doc=SimpleDocTemplate(stream,pagesize=A4,rightMargin=40,leftMargin=40,topMargin=164,bottomMargin=49,title=report.get('title','MarketIntel'),author='MarketIntel')
-    story=[p('La lectura de hoy',heading)]
-    for line in report.get('summary') or []:story += [p(line),Spacer(1,9)]
-    story += [Spacer(1,10),table([['Referencia','Precio','Cambio','Hora del dato']]+[[q.get('label'),number(q.get('price'),' '+str(q.get('unit',''))),number(q.get('change'))+' / '+number(q.get('change_pct'),'%'),when(q.get('as_of'))] for q in report.get('quotes') or []],[inner*.32,inner*.23,inner*.22,inner*.23])]
-    story += [Spacer(1,17),p('Cobertura y fuentes',sub)]
-    for line in (report.get('warnings') or [])+(report.get('notes') or []):story += [p(line,small),Spacer(1,7)]
-    for q in report.get('quotes') or []:
-        story += [p(q.get('label','')+': '+str(q.get('source',''))+'. '+str(q.get('reason') or q.get('baseline_label') or ''),small),Spacer(1,4)]
-    if report.get('macro'):
-        story += [PageBreak(),p('La publicación del día',heading)]
-        for m in report['macro']:
-            story += [p(m.get('title'),sub),p(when(m.get('published_at')),small),Spacer(1,10),table([['Actual','Consenso','Anterior'],[m.get('actual'),m.get('consensus') or 'Sin consenso verificado',m.get('previous') or 'No disponible en esta fuente']],[inner/3]*3),Spacer(1,13),p('Explicado fácil',sub),p(m.get('explanation')),Spacer(1,12),p(m.get('source_url'),small),Spacer(1,15)]
-            story += [p('Qué cambió en el mercado',sub)]
-            if m.get('market_reaction'):
-                story += [table([['Referencia','Antes del dato','Al corte','Cambio puntos']]+[[r.get('label'),number(r.get('before')),number(r.get('price')),number(r.get('change'))] for r in m['market_reaction']],[inner*.32,inner*.23,inner*.23,inner*.22]),Spacer(1,10)]
-                for r in m['market_reaction']:story += [p(str(r.get('label'))+': '+when(r.get('before_at'))+' a '+when(r.get('as_of')),small)]
-            story += [p(m.get('market_reaction_note'),small),Spacer(1,18)]
-    story += [PageBreak(),p('Cuántas suben y bajan',heading)]
-    for row in report.get('breadth') or []:
-        story += [p(row.get('label'),sub),table([['Al alza','A la baja','Sin cambio','Sin dato'],[row.get('up'),row.get('down'),row.get('unchanged'),row.get('missing') if row.get('total') else 'Universo sin verificar']],[inner/4]*4),Spacer(1,10),p('Cobertura: '+str(row.get('valid',0))+' de '+str(row.get('total') or 'universo desconocido')+'. '+str(row.get('note','')),small),p(row.get('source'),small),Spacer(1,35)]
-    story += [PageBreak(),p('Las siete bajo la lupa' if report.get('kind')=='opening' else 'Las siete al cierre',heading)]
-    rows=[['Empresa','Anterior','Premercado' if report.get('kind')=='opening' else 'Cierre','Cambio USD','Cambio %']]
-    for q in report.get('magnificent_seven') or []:rows.append([q.get('ticker'),number(q.get('previous')),number(q.get('price')),number(q.get('change')),number(q.get('change_pct'),'%')])
-    story += [table(rows,[inner*.18,inner*.20,inner*.22,inner*.20,inner*.20]),Spacer(1,13),p('Precios en USD. El precio de premercado puede cambiar antes de abrir. El cierre regular se mantiene separado de las cotizaciones posteriores.',small)]
-    for q in report.get('magnificent_seven') or []:
-        story += [p(str(q.get('ticker'))+': '+when(q.get('as_of'))+' · '+str(q.get('source',''))+(' · '+str(q.get('reason')) if q.get('reason') else ''),small),Spacer(1,4)]
-    watch=report.get('watchlist_reports') or []
-    published=[r for r in watch if r.get('status')=='published']
-    if published:
-        story += [PageBreak(),p('Publicaciones en tu watchlist',heading)]
-        for row in published:
-            group=[p(row.get('ticker')+' · '+str(row.get('title','')),sub),p(when(row.get('published_at'))+' · '+str(row.get('source','')),small),Spacer(1,7),p(row.get('summary'))]
-            if row.get('post_price') is not None:group += [Spacer(1,8),p('Después del cierre: '+number(row['post_price'],' USD')+' / '+number(row.get('post_change_pct'),'%')+' · '+when(row.get('post_as_of')))]
-            group += [Spacer(1,8),p(row.get('source_url'),small),Spacer(1,22)]
-            story += [KeepTogether(group)]
-    elif report.get('kind')=='closing':
-        story += [Spacer(1,24),p('Tu watchlist',sub),p('Lista vacía.' if not report.get('watchlist') else 'No hay una publicación confirmada en las fuentes recibidas. Esto no confirma que no se hayan publicado resultados.',small)]
-    for row in [item for item in watch if item.get('status')=='pending']:
-        story += [Spacer(1,12),p(str(row.get('ticker'))+' · Publicación pendiente',sub),p(row.get('title')),p(row.get('summary'),small),p(row.get('source_url'),small)]
-    doc.build(story,onFirstPage=header,onLaterPages=header)
-    return stream.getvalue()
+    """Render the exact report snapshot with the approved visual layout."""
+    from marketintel_report_pdf import render_report_pdf as render
+    return render(report)
